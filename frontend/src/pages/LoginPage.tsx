@@ -1,32 +1,29 @@
-import React, { useState } from 'react'; //[cite: 22]
-import { useNavigate, Link } from 'react-router-dom'; //[cite: 22]
-import axiosClient from '../api/axiosClient'; //[cite: 22]
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axiosClient from '../api/axiosClient';
 
-export default function LoginPage() { //[cite: 22]
-    const [username, setUsername] = useState(''); //[cite: 22]
-    const [password, setPassword] = useState(''); //[cite: 22]
-    const [error, setError] = useState(''); //[cite: 22]
-    const [loading, setLoading] = useState(false); //[cite: 22]
-    const navigate = useNavigate(); //[cite: 22]
+export default function LoginPage() {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
-    const handleLogin = async (e: React.FormEvent) => { //[cite: 22]
-        e.preventDefault(); //[cite: 22]
-        try { //[cite: 22]
-            setError(''); //[cite: 22]
-            setLoading(true); //[cite: 22]
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            setError('');
+            setLoading(true);
 
-            // Gửi { username, password } lên backend[cite: 22]
-            const response = await axiosClient.post('/auth/login', { //[cite: 22]
-                username: username.trim(), //[cite: 22]
-                password //[cite: 22]
-            }); //[cite: 22]
+            const response = await axiosClient.post('/auth/login', {
+                username: username.trim(),
+                password
+            });
 
-            // Lấy token từ response (hỗ trợ cả trường hợp backend trả về .token hoặc .accessToken)[cite: 22]
-            const token = response.data.token || response.data.accessToken; //[cite: 22]
+            const token = response.data.token || response.data.accessToken;
 
-            if (token) { //[cite: 22]
-                // ĐỒNG BỘ DÙNG 'accessToken' ĐỂ KHỚP VỚI AXISCLIENT[cite: 22]
-                localStorage.setItem('accessToken', token); //[cite: 22]
+            if (token) {
+                localStorage.setItem('accessToken', token);
             }
 
             const loggedInUser = response.data.user;
@@ -34,18 +31,17 @@ export default function LoginPage() { //[cite: 22]
                 localStorage.setItem('user', JSON.stringify(loggedInUser));
             }
 
-            // ĐIỀU HƯỚNG THÔNG MINH DỰA TRÊN VAI TRÒ (ROLE)
             const role = loggedInUser?.role?.toUpperCase();
             if (role === 'KITCHEN') {
-                navigate('/kitchen'); // Bếp trưởng vào thẳng màn hình bếp
+                navigate('/kitchen');
             } else {
-                navigate('/'); // Admin, Thu ngân, Phục vụ vào sơ đồ bàn
+                navigate('/');
             }
-        } catch (err: any) { //[cite: 22]
-            console.error('Lỗi đăng nhập:', err); //[cite: 22]
-            setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!'); //[cite: 22]
-        } finally { //[cite: 22]
-            setLoading(false); //[cite: 22]
+        } catch (err: any) {
+            console.error('Lỗi đăng nhập:', err);
+            setError(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -96,13 +92,6 @@ export default function LoginPage() { //[cite: 22]
                         {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
                     </button>
                 </form>
-
-                <p className="text-center text-sm text-slate-400 mt-6">
-                    Chưa có tài khoản?{' '}
-                    <Link to="/register" className="text-amber-500 hover:underline font-medium">
-                        Đăng ký ngay
-                    </Link>
-                </p>
             </div>
         </div>
     );

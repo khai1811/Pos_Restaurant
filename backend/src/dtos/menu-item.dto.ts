@@ -5,6 +5,7 @@ export interface CreateMenuItemDto {
     image?: string;
     imageUrl?: string;
     isAvailable?: boolean;
+    popular?: boolean;
     categoryId: string;
 }
 
@@ -15,6 +16,7 @@ export interface UpdateMenuItemDto {
     image?: string;
     imageUrl?: string;
     isAvailable?: boolean;
+    popular?: boolean;
     categoryId?: string;
 }
 
@@ -25,6 +27,7 @@ export interface MenuItemResponseDto {
     price: number;
     imageUrl: string | null;
     isAvailable: boolean;
+    popular?: boolean;
     categoryId: string;
     categoryName?: string;
     createdAt: Date;

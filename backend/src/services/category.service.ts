@@ -26,11 +26,11 @@ export class CategoryService {
             throw new Error('Tên danh mục đã tồn tại');
         }
 
+        // Bỏ isAvailable, chỉ truyền name và description
         const category = await prisma.category.create({
             data: {
                 name: data.name,
                 description: data.description,
-                isAvailable: data.isAvailable ?? true,
             },
         });
         return new CategoryEntity(category);
@@ -51,9 +51,14 @@ export class CategoryService {
             }
         }
 
+        // Lọc bỏ isAvailable nếu nó vô tình bị kẹt trong UpdateCategoryDto
+        const updatePayload: any = {};
+        if (data.name !== undefined) updatePayload.name = data.name;
+        if (data.description !== undefined) updatePayload.description = data.description;
+
         const updated = await prisma.category.update({
             where: { id },
-            data,
+            data: updatePayload,
         });
         return new CategoryEntity(updated);
     }

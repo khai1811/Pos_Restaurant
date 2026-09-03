@@ -5,6 +5,7 @@ export class MenuItemEntity {
     price!: number;
     imageUrl!: string | null; // 🌟 Dùng imageUrl[cite: 7]
     isAvailable!: boolean;
+    popular?: boolean;
     categoryId!: string;
     categoryName?: string;
     createdAt!: Date;

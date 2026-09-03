@@ -7,10 +7,13 @@ import cors from 'cors';
 const app: Express = express();
 
 app.use(cors({
-    origin: ['http://localhost:5174', 'http://localhost:5173'],
+    origin: true, // Cho phép mọi origin gửi request lên
     credentials: true
 }));
-app.use(express.json());
+
+// 🔥 MỞ RỘNG GIỚI HẠN NHẬN DỮ LIỆU LÊN 50MB ĐỂ CHỨA ẢNH BASE64
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // --- TÍCH HỢP SWAGGER UI CHUẨN ---
 try {
@@ -77,6 +80,14 @@ RegisterRoutes(app);
 
 // Global Error Handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    // Nếu lỗi là do payload quá lớn từ thư viện body-parser
+    if (err.type === 'entity.too.large') {
+        return res.status(413).json({
+            success: false,
+            message: 'Kích thước ảnh quá lớn. Vui lòng chọn ảnh dung lượng thấp hơn.'
+        });
+    }
+
     const status = err.status || 500;
     res.status(status).json({
         success: false,

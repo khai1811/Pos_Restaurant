@@ -22,6 +22,7 @@ export class MenuItemService {
                     ...item,
                     price: Number(item.price),
                     imageUrl: item.imageUrl,
+                    popular: item.popular, // 🔥 Lấy dữ liệu Hot từ DB
                     categoryName: item.category?.name,
                 })
         );
@@ -43,6 +44,7 @@ export class MenuItemService {
             ...item,
             price: Number(item.price),
             imageUrl: item.imageUrl,
+            popular: item.popular, // 🔥 Lấy dữ liệu Hot từ DB
             categoryName: item.category?.name,
         });
     }
@@ -65,6 +67,7 @@ export class MenuItemService {
                 price: data.price,
                 imageUrl: imageValue,
                 isAvailable: data.isAvailable ?? true,
+                popular: data.popular ?? false, // 🔥 Lưu cờ Hot vào DB
                 categoryId: data.categoryId,
             },
             include: {
@@ -78,6 +81,7 @@ export class MenuItemService {
             ...item,
             price: Number(item.price),
             imageUrl: item.imageUrl,
+            popular: item.popular, // 🔥 Lấy dữ liệu Hot từ DB
             categoryName: item.category?.name,
         });
     }
@@ -108,6 +112,7 @@ export class MenuItemService {
             description: data.description,
             price: data.price,
             isAvailable: data.isAvailable,
+            popular: data.popular, // 🔥 Cập nhật cờ Hot vào DB
             categoryId: data.categoryId,
         };
 
@@ -129,6 +134,7 @@ export class MenuItemService {
             ...updated,
             price: Number(updated.price),
             imageUrl: updated.imageUrl,
+            popular: updated.popular, // 🔥 Lấy dữ liệu Hot từ DB
             categoryName: updated.category?.name,
         });
     }

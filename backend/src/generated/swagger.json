@@ -412,6 +412,9 @@
 					"isAvailable": {
 						"type": "boolean"
 					},
+					"popular": {
+						"type": "boolean"
+					},
 					"categoryId": {
 						"type": "string"
 					},
@@ -462,6 +465,9 @@
 					"isAvailable": {
 						"type": "boolean"
 					},
+					"popular": {
+						"type": "boolean"
+					},
 					"categoryId": {
 						"type": "string"
 					}
@@ -493,6 +499,9 @@
 						"type": "string"
 					},
 					"isAvailable": {
+						"type": "boolean"
+					},
+					"popular": {
 						"type": "boolean"
 					},
 					"categoryId": {

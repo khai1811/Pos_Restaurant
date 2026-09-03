@@ -22,6 +22,8 @@ const userSelectFields = {
 export class UserService {
     async getAll(): Promise<UserEntity[]> {
         const users = await prisma.user.findMany({
+            // Chỉ lấy những nhân viên đang hoạt động (chưa bị xóa mềm)
+            where: { isActive: true },
             select: userSelectFields,
             orderBy: { createdAt: 'desc' },
         });
@@ -112,7 +114,12 @@ export class UserService {
         const user = await prisma.user.findUnique({ where: { id } });
         if (!user) throw new Error('Không tìm thấy người dùng');
 
-        await prisma.user.delete({ where: { id } });
+        // Xóa mềm: Cập nhật isActive thành false thay vì xóa hẳn khỏi database
+        await prisma.user.update({
+            where: { id },
+            data: { isActive: false }
+        });
+
         return true;
     }
 }

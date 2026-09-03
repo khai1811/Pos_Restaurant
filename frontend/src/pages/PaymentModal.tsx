@@ -112,18 +112,20 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto animate-fade-in">
-            <div className="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 text-slate-800 my-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 font-sans select-none">
+            {/* Khung Modal Cố định chiều cao tối đa, thiết lập dạng Column */}
+            <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl flex flex-col max-h-[90dvh] animate-fade-in overflow-hidden border border-slate-200">
+
+                {/* 1. HEADER CỐ ĐỊNH (Không bị cuộn) */}
+                <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-white shrink-0">
                     <div>
-                        <div className="flex items-center gap-2">
-                            <span className="font-bold text-lg text-slate-900">Thanh toán đơn hàng</span>
-                            <span className="bg-amber-500/20 text-amber-800 text-xs font-mono font-bold px-2 py-0.5 rounded-full">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="text-[16px] font-black text-slate-800 tracking-tight">Thanh Toán Đơn Hàng</h3>
+                            <span className="bg-amber-100 text-amber-800 text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-amber-200">
                                 {order.orderNumber}
                             </span>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                        <p className="text-[12px] text-slate-500 font-medium">
                             {order.tableName} • {order.guestCount} khách • {order.items.length} món
                         </p>
                     </div>
@@ -132,254 +134,221 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                             sound.play('click');
                             onClose();
                         }}
-                        className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
+                        className="w-8 h-8 bg-slate-100 hover:bg-rose-50 hover:text-rose-500 text-slate-500 rounded-full flex items-center justify-center transition-colors cursor-pointer"
                     >
                         <X className="w-4 h-4" />
                     </button>
                 </div>
 
-                {/* Tổng tiền cần thanh toán */}
-                <div className="my-4 p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-between shadow-md">
-                    <div>
-                        <span className="text-xs text-slate-300 font-medium">Cần thanh toán:</span>
-                        <div className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">
-                            {formatVND(order.total)}
+                {/* 2. BODY CUỘN ĐƯỢC (Tự động xuất hiện thanh cuộn khi bàn phím đẩy lên) */}
+                <div className="flex-1 overflow-y-auto bg-slate-50/30 p-4 scrollbar-none">
+
+                    {/* Tổng tiền nổi bật */}
+                    <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white flex items-center justify-between shadow-sm">
+                        <div>
+                            <span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block mb-1">Cần thanh toán:</span>
+                            <div className="text-3xl font-black text-amber-400 tracking-tight leading-none">
+                                {formatVND(order.total)}
+                            </div>
+                        </div>
+                        <div className="text-right text-[11px] text-slate-300 space-y-0.5 font-medium">
+                            <div>Tạm tính: <span className="text-white font-bold">{formatVND(order.subtotal)}</span></div>
+                            {order.discountAmount > 0 && (
+                                <div className="text-rose-300">Giảm giá: -{formatVND(order.discountAmount)}</div>
+                            )}
+                            {order.taxAmount > 0 && <div>VAT ({order.taxPercent}%): +{formatVND(order.taxAmount)}</div>}
                         </div>
                     </div>
-                    <div className="text-right text-xs text-slate-300 space-y-0.5">
-                        <div>Tạm tính: {formatVND(order.subtotal)}</div>
-                        {order.discountAmount > 0 && (
-                            <div className="text-rose-300">Giảm giá: -{formatVND(order.discountAmount)}</div>
-                        )}
-                        {order.taxAmount > 0 && <div>VAT ({order.taxPercent}%): +{formatVND(order.taxAmount)}</div>}
-                    </div>
-                </div>
 
-                {/* Phương thức thanh toán */}
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
-                    {[
-                        { id: 'vietqr', label: 'VietQR', icon: QrCode, color: 'text-amber-600' },
-                        { id: 'cash', label: 'Tiền mặt', icon: Banknote, color: 'text-emerald-600' },
-                        { id: 'card', label: 'Thẻ POS', icon: CreditCard, color: 'text-blue-600' },
-                        { id: 'momo', label: 'Ví MoMo', icon: Wallet, color: 'text-pink-600' },
-                        { id: 'split', label: 'Tách kênh', icon: Split, color: 'text-purple-600' },
-                    ].map((item) => {
-                        const Icon = item.icon;
-                        const active = selectedMethod === item.id;
-                        return (
-                            <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => {
-                                    sound.play('click');
-                                    setSelectedMethod(item.id as PaymentMethod);
-                                }}
-                                className={`p-2.5 rounded-xl border flex flex-col items-center gap-1.5 transition text-center cursor-pointer ${active
-                                    ? 'border-amber-500 bg-amber-50 text-amber-900 font-bold shadow-xs'
-                                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                                    }`}
-                            >
-                                <Icon className={`w-5 h-5 ${item.color}`} />
-                                <span className="text-xs">{item.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {/* Khung chi tiết phương thức */}
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 min-h-[220px] flex flex-col justify-center">
-                    {/* VietQR View */}
-                    {selectedMethod === 'vietqr' && (
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
-                            <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs shrink-0 text-center">
-                                <img
-                                    src={qrString}
-                                    alt="VietQR Payment"
-                                    className="w-36 h-36 sm:w-40 sm:h-40 object-contain rounded-lg mx-auto"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).src =
-                                            'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' +
-                                            encodeURIComponent(`VIETQR|MB|${bankInfo.accountNumber}|${order.total}|${order.orderNumber}`);
+                    {/* Lưới chọn phương thức thanh toán (Gọn gàng) */}
+                    <div className="grid grid-cols-5 gap-2 mb-4">
+                        {[
+                            { id: 'vietqr', label: 'VietQR', icon: QrCode },
+                            { id: 'cash', label: 'Tiền mặt', icon: Banknote },
+                            { id: 'card', label: 'Thẻ POS', icon: CreditCard },
+                            { id: 'momo', label: 'Ví MoMo', icon: Wallet },
+                            { id: 'split', label: 'Tách kênh', icon: Split },
+                        ].map((item) => {
+                            const Icon = item.icon;
+                            const active = selectedMethod === item.id;
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => {
+                                        sound.play('click');
+                                        setSelectedMethod(item.id as PaymentMethod);
                                     }}
-                                />
-                                <p className="text-[10px] text-slate-500 font-medium mt-1">
-                                    Quét bằng App Ngân hàng
+                                    className={`py-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-colors cursor-pointer ${active
+                                        ? 'bg-blue-50 border-[#1890ff] text-[#1890ff] shadow-sm'
+                                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                                        }`}
+                                >
+                                    <Icon size={20} className={active ? 'text-[#1890ff]' : 'text-slate-400'} />
+                                    <span className="text-[10px] font-bold">{item.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Vùng chi tiết nhập liệu */}
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm min-h-[180px] flex flex-col justify-center">
+
+                        {/* VietQR View */}
+                        {selectedMethod === 'vietqr' && (
+                            <div className="flex items-center gap-4">
+                                <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm shrink-0">
+                                    <img
+                                        src={qrString}
+                                        alt="VietQR Payment"
+                                        className="w-28 h-28 object-contain rounded-lg"
+                                        onError={(e) => {
+                                            (e.target as HTMLImageElement).src =
+                                                'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' +
+                                                encodeURIComponent(`VIETQR|MB|${bankInfo.accountNumber}|${order.total}|${order.orderNumber}`);
+                                        }}
+                                    />
+                                    <p className="text-[9px] text-center text-slate-500 font-bold mt-1 uppercase">Quét App Ngân Hàng</p>
+                                </div>
+                                <div className="space-y-2 text-[11px] w-full">
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 flex justify-between">
+                                        <span className="text-slate-500">Ngân hàng:</span>
+                                        <strong className="text-slate-800">{bankInfo.bankName}</strong>
+                                    </div>
+                                    <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 flex justify-between">
+                                        <span className="text-slate-500">Số TK:</span>
+                                        <strong className="font-mono text-slate-900 font-black">{bankInfo.accountNumber}</strong>
+                                    </div>
+                                    <div className="bg-blue-50 p-2 rounded-lg border border-blue-100 flex flex-col gap-1">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-blue-700 font-medium">Nội dung:</span>
+                                            <button
+                                                type="button"
+                                                onClick={handleCopyContent}
+                                                className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-white border border-blue-200 px-2 py-0.5 rounded hover:bg-blue-100 cursor-pointer shadow-sm"
+                                            >
+                                                {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                                                {copied ? 'Đã copy' : 'Copy'}
+                                            </button>
+                                        </div>
+                                        <strong className="font-mono text-[#1890ff] text-[13px]">{order.orderNumber}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tiền mặt View */}
+                        {selectedMethod === 'cash' && (
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                                        Khách đưa (VNĐ):
+                                    </label>
+                                    <input
+                                        type="number"
+                                        value={cashGiven || ''}
+                                        onChange={(e) => setCashGiven(Number(e.target.value))}
+                                        className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-[15px] font-black text-slate-900 focus:outline-none focus:border-[#1890ff] focus:ring-1 focus:ring-[#1890ff]"
+                                        placeholder="Nhập số tiền..."
+                                    />
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-slate-500 block mb-1.5 uppercase">Gợi ý nhanh:</span>
+                                    <div className="flex flex-wrap gap-2">
+                                        {quickCashList.map((amt) => (
+                                            <button
+                                                key={amt}
+                                                type="button"
+                                                onClick={() => { sound.play('click'); setCashGiven(amt); }}
+                                                className={`px-3 py-1.5 rounded border text-[11px] font-bold transition-colors cursor-pointer ${cashGiven === amt
+                                                    ? 'bg-[#1890ff] text-white border-[#1890ff] shadow-sm'
+                                                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                {formatVND(amt)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="pt-3 mt-1 border-t border-dashed border-slate-200 flex items-center justify-between">
+                                    <span className="font-bold text-[13px] text-slate-600">Tiền thừa trả khách:</span>
+                                    <span className={`text-xl font-black ${changeAmount >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {formatVND(changeAmount)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Split (Tách kênh) View */}
+                        {selectedMethod === 'split' && (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="font-bold text-[11px] text-slate-600 block mb-1.5 uppercase">1. Tiền mặt (Cash):</label>
+                                        <input
+                                            type="number"
+                                            value={splitCash || ''}
+                                            onChange={(e) => {
+                                                const val = Number(e.target.value);
+                                                setSplitCash(val);
+                                                setSplitQr(Math.max(0, order.total - val));
+                                            }}
+                                            className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-[14px] font-black text-slate-900 focus:outline-none focus:border-[#1890ff]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="font-bold text-[11px] text-slate-600 block mb-1.5 uppercase">2. Chuyển khoản (QR):</label>
+                                        <input
+                                            type="number"
+                                            value={splitQr || ''}
+                                            onChange={(e) => {
+                                                const val = Number(e.target.value);
+                                                setSplitQr(val);
+                                                setSplitCash(Math.max(0, order.total - val));
+                                            }}
+                                            className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2.5 text-[14px] font-black text-slate-900 focus:outline-none focus:border-[#1890ff]"
+                                        />
+                                    </div>
+                                </div>
+
+                                {!isSplitValid && (
+                                    <div className="flex items-center gap-1.5 text-rose-600 bg-rose-50 px-3 py-2 rounded-lg border border-rose-200 text-[11px] font-medium">
+                                        <AlertCircle size={14} className="shrink-0" />
+                                        <span>Tổng tiền tách chưa khớp với giá trị hóa đơn.</span>
+                                    </div>
+                                )}
+                                <div className="text-center text-[12px] font-medium text-slate-500 bg-slate-50 py-2 rounded-lg border border-slate-100">
+                                    Tổng cộng: <strong className={isSplitValid ? 'text-emerald-600' : 'text-rose-600'}>{formatVND(splitCash + splitQr)}</strong> / {formatVND(order.total)}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Thẻ POS / MoMo View */}
+                        {(selectedMethod === 'card' || selectedMethod === 'momo') && (
+                            <div className="py-6 flex flex-col items-center justify-center text-center space-y-2">
+                                {selectedMethod === 'card' ? <CreditCard className="w-12 h-12 text-[#1890ff] mb-2" strokeWidth={1.5} /> : <Wallet className="w-12 h-12 text-pink-500 mb-2" strokeWidth={1.5} />}
+                                <p className="font-black text-slate-800 text-[15px]">
+                                    {selectedMethod === 'card' ? 'Quẹt thẻ trên máy POS' : 'Quét mã bằng Ví MoMo'}
+                                </p>
+                                <p className="text-[11px] font-medium text-slate-500 max-w-[250px]">
+                                    {selectedMethod === 'card'
+                                        ? 'Yêu cầu khách hàng chạm hoặc cắm thẻ vào thiết bị POS để thanh toán.'
+                                        : 'Yêu cầu khách hàng mở ứng dụng MoMo để quét mã QR tĩnh của cửa hàng.'}
                                 </p>
                             </div>
-
-                            <div className="space-y-2 text-xs w-full">
-                                <div className="bg-white p-2.5 rounded-xl border border-slate-200">
-                                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">
-                                        Ngân hàng thụ hưởng:
-                                    </span>
-                                    <strong className="text-slate-800">{bankInfo.bankName}</strong>
-                                </div>
-                                <div className="bg-white p-2.5 rounded-xl border border-slate-200 flex justify-between items-center">
-                                    <div>
-                                        <span className="text-slate-400 block text-[10px] uppercase font-semibold">
-                                            Số tài khoản:
-                                        </span>
-                                        <strong className="font-mono text-slate-800 text-sm">{bankInfo.accountNumber}</strong>
-                                    </div>
-                                    <span className="text-[10px] text-slate-500 font-medium">
-                                        {bankInfo.accountName}
-                                    </span>
-                                </div>
-                                <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-200 flex justify-between items-center">
-                                    <div>
-                                        <span className="text-amber-700 block text-[10px] uppercase font-semibold">
-                                            Nội dung chuyển khoản:
-                                        </span>
-                                        <strong className="font-mono text-amber-900 text-sm">{order.orderNumber}</strong>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={handleCopyContent}
-                                        className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-white border border-amber-300 px-2 py-1 rounded-lg hover:bg-amber-100 cursor-pointer"
-                                    >
-                                        {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                                        {copied ? 'Đã sao chép' : 'Sao chép'}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Cash View */}
-                    {selectedMethod === 'cash' && (
-                        <div className="space-y-3">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-700 mb-1">
-                                    Khách đưa (VNĐ):
-                                </label>
-                                <input
-                                    type="number"
-                                    value={cashGiven || ''}
-                                    onChange={(e) => setCashGiven(Number(e.target.value))}
-                                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-lg font-bold text-slate-900 focus:outline-none focus:border-amber-500"
-                                />
-                            </div>
-
-                            <div>
-                                <span className="text-[11px] font-medium text-slate-500 block mb-1">
-                                    Gợi ý tiền mặt nhanh:
-                                </span>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {quickCashList.map((amt) => (
-                                        <button
-                                            key={amt}
-                                            type="button"
-                                            onClick={() => {
-                                                sound.play('click');
-                                                setCashGiven(amt);
-                                            }}
-                                            className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition cursor-pointer ${cashGiven === amt
-                                                ? 'bg-amber-500 text-slate-950 border-amber-500'
-                                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                                                }`}
-                                        >
-                                            {formatVND(amt)}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between">
-                                <span className="font-semibold text-xs text-emerald-800">Tiền thừa trả khách:</span>
-                                <span className="text-lg font-black text-emerald-700">{formatVND(changeAmount)}</span>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Card / POS View */}
-                    {selectedMethod === 'card' && (
-                        <div className="py-6 text-center space-y-2">
-                            <CreditCard className="w-12 h-12 text-blue-500 mx-auto" />
-                            <p className="font-bold text-slate-800 text-sm">
-                                Quẹt thẻ hoặc chạm Contactless trên máy POS
-                            </p>
-                            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                                Hỗ trợ Visa, Mastercard, JCB, Napas và Apple Pay / Google Pay.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* MoMo View */}
-                    {selectedMethod === 'momo' && (
-                        <div className="py-6 text-center space-y-2">
-                            <Wallet className="w-12 h-12 text-pink-500 mx-auto" />
-                            <p className="font-bold text-slate-800 text-sm">
-                                Thanh toán qua Ví điện tử MoMo / ZaloPay
-                            </p>
-                            <p className="text-xs text-slate-500">
-                                Khách hàng quét mã QR hoặc chạm máy quét mã vạch ví MoMo.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Split Payment View */}
-                    {selectedMethod === 'split' && (
-                        <div className="space-y-3 text-xs">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="font-bold text-slate-700 block mb-1">
-                                        1. Tiền mặt (Cash):
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={splitCash || ''}
-                                        onChange={(e) => {
-                                            const val = Number(e.target.value);
-                                            setSplitCash(val);
-                                            setSplitQr(Math.max(0, order.total - val));
-                                        }}
-                                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:border-amber-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="font-bold text-slate-700 block mb-1">
-                                        2. Chuyển khoản (QR):
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={splitQr || ''}
-                                        onChange={(e) => {
-                                            const val = Number(e.target.value);
-                                            setSplitQr(val);
-                                            setSplitCash(Math.max(0, order.total - val));
-                                        }}
-                                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:border-amber-500"
-                                    />
-                                </div>
-                            </div>
-
-                            {!isSplitValid && (
-                                <div className="flex items-center gap-1.5 text-rose-600 bg-rose-50 p-2 rounded-lg border border-rose-200">
-                                    <AlertCircle className="w-4 h-4 shrink-0" />
-                                    <span>Tổng tiền phân bổ phải đúng bằng {formatVND(order.total)}</span>
-                                </div>
-                            )}
-
-                            <p className="text-[11px] text-slate-500 text-center">
-                                Tổng cộng: {formatVND(splitCash + splitQr)} / Cần thanh toán: {formatVND(order.total)}
-                            </p>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
 
-                {/* Footer Actions */}
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-200 mt-4">
+                {/* 3. FOOTER CỐ ĐỊNH (Chứa nút Xác nhận luôn nằm dưới cùng) */}
+                <div className="p-4 border-t border-slate-200 bg-slate-50 shrink-0 flex items-center gap-3">
                     <button
                         type="button"
-                        onClick={() => {
-                            sound.play('click');
-                            onClose();
-                        }}
-                        className="w-1/3 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold text-xs transition cursor-pointer"
+                        onClick={() => { sound.play('click'); onClose(); }}
+                        className="w-1/3 py-3.5 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 font-bold text-[13px] transition cursor-pointer"
                     >
                         Quay lại
                     </button>
-
                     <button
                         type="button"
                         onClick={handleConfirmPay}
@@ -388,18 +357,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                             (selectedMethod === 'cash' && cashGiven < order.total) ||
                             (selectedMethod === 'split' && !isSplitValid)
                         }
-                        className="w-2/3 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-2/3 py-3.5 rounded-xl bg-[#1890ff] hover:bg-blue-600 disabled:bg-slate-300 disabled:text-slate-500 text-white font-black text-[13px] shadow-md transition flex items-center justify-center gap-2 cursor-pointer uppercase tracking-wide"
                     >
                         {isProcessing ? (
-                            <span>Đang xử lý...</span>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Đang xử lý...
+                            </div>
                         ) : (
                             <>
-                                <CheckCircle2 className="w-4 h-4" />
-                                <span>Xác nhận Đã Thu Tiền & Hoàn tất</span>
+                                <CheckCircle2 size={18} /> Xác Nhận Đã Thu Tiền
                             </>
                         )}
                     </button>
                 </div>
+
             </div>
         </div>
     );

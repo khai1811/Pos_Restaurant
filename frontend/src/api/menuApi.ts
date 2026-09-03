@@ -6,6 +6,7 @@ export interface MenuItemDto {
     description?: string;
     categoryId: string;
     isAvailable?: boolean;
+    popular?: boolean;
     image?: string;
 }
 

@@ -68,7 +68,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     const handleOpenEdit = (staff: PosUser) => {
         sound.play('click');
         setEditingStaff(staff);
-        // Ép các giá trị null thành chuỗi rỗng '' để tránh lỗi input controlled của React
         setFormData({
             ...staff,
             username: staff.username || '',
@@ -114,8 +113,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     const handleRoleChange = (role: 'ADMIN' | 'CASHIER' | 'STAFF') => {
         const perms: StaffPermissions = {
             canDiscount: role === 'ADMIN' || role === 'CASHIER',
-            canRefund: role === 'ADMIN',
-            canViewReports: role === 'ADMIN',
+            canRefund: role === 'ADMIN' || role === 'CASHIER',
+            canViewReports: role === 'ADMIN' || role === 'CASHIER',
             canManageMenu: role === 'ADMIN',
             canManageStaff: role === 'ADMIN',
         };
@@ -198,8 +197,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                 )}
             </div>
 
-            {/* Staff Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* Staff Grid - Khóa cứng 4 cột cho iPad */}
+            <div className="grid grid-cols-4 gap-4">
                 {staffList.map((st) => (
                     <div
                         key={st.id}
@@ -225,13 +224,17 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                                         {st.email || 'Chưa cập nhật'}
                                     </p>
                                     <p className="text-[12px] text-slate-500 flex items-center gap-2">
+                                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                        {st.phone || 'Chưa cập nhật SĐT'}
+                                    </p>
+                                    <p className="text-[12px] text-slate-500 flex items-center gap-2">
                                         <Key className="w-3.5 h-3.5 text-slate-400" />
                                         Mã PIN POS: <strong className="font-mono text-slate-700 bg-slate-100 px-1.5 rounded tracking-widest">{st.pin || '****'}</strong>
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Permissions mini summary */}
+                            {/* HIỂN THỊ ĐỦ 3 QUYỀN */}
                             <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] font-medium space-y-1.5">
                                 <div className="flex justify-between items-center text-slate-500">
                                     <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Chiết khấu:</span>
@@ -240,6 +243,10 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                                 <div className="flex justify-between items-center text-slate-500">
                                     <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Hoàn tiền:</span>
                                     <span className={st.permissions?.canRefund ? "text-emerald-600 font-bold" : "text-slate-300"}>{st.permissions?.canRefund ? 'Được phép' : 'Không'}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-500">
+                                    <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Báo cáo:</span>
+                                    <span className={st.permissions?.canViewReports ? "text-emerald-600 font-bold" : "text-slate-300"}>{st.permissions?.canViewReports ? 'Được phép' : 'Không'}</span>
                                 </div>
                             </div>
                         </div>
@@ -325,6 +332,17 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                                 </div>
 
                                 <div className="col-span-2">
+                                    <label className="font-bold text-[13px] text-slate-700 block mb-1.5">Số điện thoại liên hệ:</label>
+                                    <input
+                                        type="text"
+                                        value={formData.phone || ''}
+                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                                        placeholder="Nhập SĐT..."
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-[#ff7f3f] focus:bg-white transition-colors"
+                                    />
+                                </div>
+
+                                <div className="col-span-2">
                                     <label className="font-bold text-[13px] text-slate-700 block mb-1.5">Địa chỉ Email:</label>
                                     <input
                                         type="email"
@@ -349,7 +367,6 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                                 </div>
                             </div>
 
-                            {/* Permissions Checklist */}
                             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
                                 <span className="font-bold text-[13px] text-slate-800 block mb-2">Quyền hạn hệ thống:</span>
 

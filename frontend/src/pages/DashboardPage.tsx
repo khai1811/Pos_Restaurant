@@ -75,7 +75,6 @@ export default function DashboardPage() {
     const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
     const averageOrderValue = totalOrdersCount > 0 ? totalRevenue / totalOrdersCount : 0;
     const totalCustomers = Math.round(totalOrdersCount * 2.5);
-    const spendPerCustomer = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
 
     const hourlyChartData = useMemo(() => {
         const hours = Array.from({ length: 15 }, (_, i) => i + 8);
@@ -135,174 +134,174 @@ export default function DashboardPage() {
                 `}
             </style>
 
-            <div className="flex h-screen bg-[#f0f2f5] text-slate-900 overflow-hidden print:hidden font-sans">
-                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                    <Navbar />
+            {/* CHUẨN FORM APP TABLET: h-[100dvh] ép màn hình linh động */}
+            <div className="flex flex-col h-[100dvh] w-full bg-[#f0f2f5] text-slate-900 font-sans overflow-hidden print:hidden">
+                <Navbar />
 
-                    <main className="flex-1 p-4 md:p-6 overflow-y-auto space-y-5">
-                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                            <div>
-                                <h2 className="text-xl font-bold text-slate-800">Báo Cáo Doanh Thu</h2>
-                                <p className="text-[13px] text-slate-500 mt-0.5">Tổng hợp dữ liệu kinh doanh trong ngày</p>
+                {/* MAIN CONTENT flex-1 bung full dọc, tự động overflow */}
+                <main className="flex-1 w-full overflow-y-auto p-4 md:p-6 space-y-5 block">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm w-full">
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-800">Báo Cáo Doanh Thu</h2>
+                            <p className="text-[13px] text-slate-500 mt-0.5">Tổng hợp dữ liệu kinh doanh trong ngày</p>
+                        </div>
+                        <div className="flex items-center flex-wrap gap-2.5">
+                            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                                <Calendar size={16} className="text-[#1890ff]" />
+                                <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-[13px] font-bold text-slate-700 focus:outline-none cursor-pointer" />
                             </div>
-                            <div className="flex items-center flex-wrap gap-2.5">
-                                <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                                    <Calendar size={16} className="text-[#1890ff]" />
-                                    <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-[13px] font-bold text-slate-700 focus:outline-none cursor-pointer" />
+                            <button onClick={() => setZReportModal(true)} className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer">
+                                <FileText size={16} /> Z-Report Ca
+                            </button>
+                            <button onClick={exportCSV} className="flex items-center gap-1.5 bg-[#1890ff] hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer">
+                                <Download size={16} /> Xuất Excel
+                            </button>
+                            <button onClick={() => fetchOrders(false)} disabled={isRefreshing} className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer disabled:opacity-50">
+                                <RefreshCw size={16} className={isRefreshing ? "animate-spin text-[#1890ff]" : "text-slate-500"} /> Làm mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+                        {[
+                            { title: 'Tổng Doanh Thu', val: `${totalRevenue.toLocaleString('vi-VN')} đ`, icon: DollarSign, color: 'text-blue-600', bg: 'bg-blue-50' },
+                            { title: 'Lợi Nhuận Gộp', val: `${grossProfit.toLocaleString('vi-VN')} đ`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                            { title: 'Tỷ Suất LN Biên', val: `${profitMargin.toFixed(1)}%`, icon: Percent, color: 'text-purple-600', bg: 'bg-purple-50' },
+                            { title: 'Đơn Trung Bình (AOV)', val: `${Math.round(averageOrderValue).toLocaleString('vi-VN')} đ`, icon: ShoppingBag, color: 'text-amber-600', bg: 'bg-amber-50' }
+                        ].map((kpi, i) => (
+                            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                                <div>
+                                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{kpi.title}</p>
+                                    <h3 className={`text-xl font-black mt-1 ${kpi.color}`}>{kpi.val}</h3>
                                 </div>
-                                <button onClick={() => setZReportModal(true)} className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer">
-                                    <FileText size={16} /> Z-Report Ca
-                                </button>
-                                <button onClick={exportCSV} className="flex items-center gap-1.5 bg-[#1890ff] hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer">
-                                    <Download size={16} /> Xuất Excel
-                                </button>
-                                <button onClick={() => fetchOrders(false)} disabled={isRefreshing} className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer disabled:opacity-50">
-                                    <RefreshCw size={16} className={isRefreshing ? "animate-spin text-[#1890ff]" : "text-slate-500"} /> Làm mới
-                                </button>
+                                <div className={`p-3 rounded-xl ${kpi.bg} ${kpi.color}`}><kpi.icon size={24} /></div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 w-full">
+                        <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <div className="flex items-center gap-2 mb-6">
+                                <LineChartIcon size={20} className="text-[#1890ff]" />
+                                <h3 className="text-[15px] font-bold text-slate-800">Doanh thu theo giờ (Peak Hours)</h3>
+                            </div>
+                            <div className="h-64 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={hourlyChartData}>
+                                        <defs>
+                                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#1890ff" stopOpacity={0.8} />
+                                                <stop offset="95%" stopColor="#1890ff" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                        <XAxis dataKey="time" stroke="#64748b" fontSize={11} fontWeight="bold" />
+                                        <YAxis stroke="#64748b" fontSize={11} fontWeight="bold" tickFormatter={(v) => `${v / 1000}k`} />
+                                        <Tooltip formatter={(value: any) => [`${Number(value || 0).toLocaleString('vi-VN')} đ`, 'Doanh thu']} contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                                        <Area type="monotone" dataKey="doanhThu" stroke="#1890ff" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {[
-                                { title: 'Tổng Doanh Thu', val: `${totalRevenue.toLocaleString('vi-VN')} đ`, icon: DollarSign, color: 'text-blue-600', bg: 'bg-blue-50' },
-                                { title: 'Lợi Nhuận Gộp', val: `${grossProfit.toLocaleString('vi-VN')} đ`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                                { title: 'Tỷ Suất LN Biên', val: `${profitMargin.toFixed(1)}%`, icon: Percent, color: 'text-purple-600', bg: 'bg-purple-50' },
-                                { title: 'Đơn Trung Bình (AOV)', val: `${Math.round(averageOrderValue).toLocaleString('vi-VN')} đ`, icon: ShoppingBag, color: 'text-amber-600', bg: 'bg-amber-50' }
-                            ].map((kpi, i) => (
-                                <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{kpi.title}</p>
-                                        <h3 className={`text-xl font-black mt-1 ${kpi.color}`}>{kpi.val}</h3>
-                                    </div>
-                                    <div className={`p-3 rounded-xl ${kpi.bg} ${kpi.color}`}><kpi.icon size={24} /></div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                            <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                                <div className="flex items-center gap-2 mb-6">
-                                    <LineChartIcon size={20} className="text-[#1890ff]" />
-                                    <h3 className="text-[15px] font-bold text-slate-800">Doanh thu theo giờ (Peak Hours)</h3>
-                                </div>
-                                <div className="h-64 w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={hourlyChartData}>
-                                            <defs>
-                                                <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#1890ff" stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor="#1890ff" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                            <XAxis dataKey="time" stroke="#64748b" fontSize={11} fontWeight="bold" />
-                                            <YAxis stroke="#64748b" fontSize={11} fontWeight="bold" tickFormatter={(v) => `${v / 1000}k`} />
-                                            <Tooltip formatter={(value: any) => [`${Number(value || 0).toLocaleString('vi-VN')} đ`, 'Doanh thu']} contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                                            <Area type="monotone" dataKey="doanhThu" stroke="#1890ff" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Award size={20} className="text-[#1890ff]" />
+                                <h3 className="text-[15px] font-bold text-slate-800">Top Bán Chạy</h3>
                             </div>
-
-                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
-                                <div className="flex items-center gap-2 mb-4">
-                                    <Award size={20} className="text-[#1890ff]" />
-                                    <h3 className="text-[15px] font-bold text-slate-800">Top Bán Chạy</h3>
-                                </div>
-                                <div className="flex-1 overflow-y-auto max-h-64 space-y-3.5 pr-1 scrollbar-none">
-                                    {topDishes.length === 0 ? (
-                                        <div className="h-full flex items-center justify-center text-slate-400 text-sm">Chưa có dữ liệu</div>
-                                    ) : (
-                                        topDishes.map((dish, index) => (
-                                            <div key={dish.name} className="space-y-1.5">
-                                                <div className="flex justify-between text-xs font-bold text-slate-700">
-                                                    <span className="truncate max-w-[140px]">{index + 1}. {dish.name}</span>
-                                                    <span className="text-[#1890ff]">{dish.quantity} phần</span>
-                                                </div>
-                                                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                                    <div className="bg-[#1890ff] h-full rounded-full transition-all duration-500" style={{ width: `${(dish.quantity / maxDishQty) * 100}%` }} />
-                                                </div>
+                            <div className="flex-1 overflow-y-auto max-h-64 space-y-3.5 pr-1 scrollbar-none w-full">
+                                {topDishes.length === 0 ? (
+                                    <div className="h-full flex items-center justify-center text-slate-400 text-sm">Chưa có dữ liệu</div>
+                                ) : (
+                                    topDishes.map((dish, index) => (
+                                        <div key={dish.name} className="space-y-1.5 w-full">
+                                            <div className="flex justify-between text-xs font-bold text-slate-700">
+                                                <span className="truncate max-w-[140px]">{index + 1}. {dish.name}</span>
+                                                <span className="text-[#1890ff]">{dish.quantity} phần</span>
                                             </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* BẢNG DANH SÁCH ĐƠN HÀNG ĐÃ BUNG ĐẦY ĐỦ KHÔNG RÚT GỌN */}
-                        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                            <div className="p-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                    <FileText size={20} className="text-[#1890ff]" /> Danh Sách Hóa Đơn ({filteredOrders.length})
-                                </h3>
-                                <div className="relative w-full md:w-64">
-                                    <Search size={16} className="absolute left-3 top-3 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Tìm theo bàn, mã đơn..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#1890ff]"
-                                    />
-                                </div>
-                            </div>
-
-                            {loading ? (
-                                <div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu...</div>
-                            ) : filteredOrders.length === 0 ? (
-                                <div className="p-8 text-center text-slate-400">Không có giao dịch nào trong ngày đã chọn</div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-[13px]">
-                                        <thead>
-                                            <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
-                                                <th className="p-4 font-bold">Mã HĐ</th>
-                                                <th className="p-4 font-bold">Bàn</th>
-                                                <th className="p-4 font-bold">Thời gian</th>
-                                                <th className="p-4 font-bold">Nhân viên thu ngân</th>
-                                                <th className="p-4 font-bold text-right">Tổng tiền</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {filteredOrders.map((order) => (
-                                                <tr key={order.id} className="hover:bg-blue-50 transition-colors">
-                                                    <td className="p-4 font-mono font-bold text-slate-700">#{order.id.slice(-6).toUpperCase()}</td>
-                                                    <td className="p-4 font-bold text-[#1890ff]">{order.table?.tableNumber ? `Bàn ${order.table.tableNumber}` : 'Mang về'}</td>
-                                                    <td className="p-4 text-slate-500 font-medium">{new Date(order.createdAt).toLocaleTimeString('vi-VN')} - {new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
-                                                    <td className="p-4 text-slate-600">{order.staff?.fullName || order.staff?.username || '—'}</td>
-                                                    <td className="p-4 text-right font-black text-slate-800">{Number(order.totalAmount).toLocaleString('vi-VN')} đ</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </main>
-                </div>
-
-                {zReportModal && (
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 print:hidden">
-                        <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4 animate-fade-in">
-                            <div className="text-center border-b border-slate-200 pb-3">
-                                <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-wide">Z-REPORT CUỐI CA</h3>
-                                <p className="text-[11px] text-slate-500 mt-1">Ngày báo cáo: {filterDate}</p>
-                            </div>
-                            <div className="space-y-2 text-[13px]">
-                                <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Hóa đơn:</span><span className="font-bold text-slate-800">{totalOrdersCount} đơn</span></div>
-                                <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Doanh thu:</span><span className="font-black text-[#1890ff]">{totalRevenue.toLocaleString('vi-VN')} đ</span></div>
-                                <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Ước tính giá vốn:</span><span className="font-bold text-slate-600">{estimatedCost.toLocaleString('vi-VN')} đ</span></div>
-                                <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Lợi nhuận gộp:</span><span className="font-bold text-emerald-600">{grossProfit.toLocaleString('vi-VN')} đ</span></div>
-                                <div className="flex justify-between py-1"><span className="text-slate-500 font-medium">AOV (TB đơn):</span><span className="font-bold text-indigo-600">{Math.round(averageOrderValue).toLocaleString('vi-VN')} đ</span></div>
-                            </div>
-                            <div className="flex gap-2 pt-2 border-t border-slate-200 mt-2">
-                                <button onClick={() => window.print()} className="flex-1 bg-[#1890ff] hover:bg-blue-600 text-white py-2.5 rounded-lg text-[13px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm"><Printer size={16} /> In Z-Report</button>
-                                <button onClick={() => setZReportModal(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-4 rounded-lg text-[13px] font-bold cursor-pointer">Đóng</button>
+                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                                <div className="bg-[#1890ff] h-full rounded-full transition-all duration-500" style={{ width: `${(dish.quantity / maxDishQty) * 100}%` }} />
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
                     </div>
-                )}
+
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden w-full">
+                        <div className="p-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <FileText size={20} className="text-[#1890ff]" /> Danh Sách Hóa Đơn ({filteredOrders.length})
+                            </h3>
+                            <div className="relative w-full md:w-64 shrink-0">
+                                <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Tìm theo bàn, mã đơn..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#1890ff]"
+                                />
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu...</div>
+                        ) : filteredOrders.length === 0 ? (
+                            <div className="p-8 text-center text-slate-400">Không có giao dịch nào trong ngày đã chọn</div>
+                        ) : (
+                            <div className="overflow-x-auto w-full">
+                                <table className="w-full text-left text-[13px] whitespace-nowrap">
+                                    <thead>
+                                        <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                                            <th className="p-4 font-bold">Mã HĐ</th>
+                                            <th className="p-4 font-bold">Bàn</th>
+                                            <th className="p-4 font-bold">Thời gian</th>
+                                            <th className="p-4 font-bold">Nhân viên thu ngân</th>
+                                            <th className="p-4 font-bold text-right">Tổng tiền</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {filteredOrders.map((order) => (
+                                            <tr key={order.id} className="hover:bg-blue-50 transition-colors">
+                                                <td className="p-4 font-mono font-bold text-slate-700">#{order.id.slice(-6).toUpperCase()}</td>
+                                                <td className="p-4 font-bold text-[#1890ff]">{order.table?.tableNumber ? `Bàn ${order.table.tableNumber}` : 'Mang về'}</td>
+                                                <td className="p-4 text-slate-500 font-medium">{new Date(order.createdAt).toLocaleTimeString('vi-VN')} - {new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
+                                                <td className="p-4 text-slate-600">{order.staff?.fullName || order.staff?.username || '—'}</td>
+                                                <td className="p-4 text-right font-black text-slate-800">{Number(order.totalAmount).toLocaleString('vi-VN')} đ</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </main>
             </div>
+
+            {/* Modal Z-Report */}
+            {zReportModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 print:hidden">
+                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4 animate-fade-in">
+                        <div className="text-center border-b border-slate-200 pb-3">
+                            <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-wide">Z-REPORT CUỐI CA</h3>
+                            <p className="text-[11px] text-slate-500 mt-1">Ngày báo cáo: {filterDate}</p>
+                        </div>
+                        <div className="space-y-2 text-[13px]">
+                            <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Hóa đơn:</span><span className="font-bold text-slate-800">{totalOrdersCount} đơn</span></div>
+                            <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Doanh thu:</span><span className="font-black text-[#1890ff]">{totalRevenue.toLocaleString('vi-VN')} đ</span></div>
+                            <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Ước tính giá vốn:</span><span className="font-bold text-slate-600">{estimatedCost.toLocaleString('vi-VN')} đ</span></div>
+                            <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Lợi nhuận gộp:</span><span className="font-bold text-emerald-600">{grossProfit.toLocaleString('vi-VN')} đ</span></div>
+                            <div className="flex justify-between py-1"><span className="text-slate-500 font-medium">AOV (TB đơn):</span><span className="font-bold text-indigo-600">{Math.round(averageOrderValue).toLocaleString('vi-VN')} đ</span></div>
+                        </div>
+                        <div className="flex gap-2 pt-2 border-t border-slate-200 mt-2">
+                            <button onClick={() => window.print()} className="flex-1 bg-[#1890ff] hover:bg-blue-600 text-white py-2.5 rounded-lg text-[13px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm"><Printer size={16} /> In Z-Report</button>
+                            <button onClick={() => setZReportModal(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-4 rounded-lg text-[13px] font-bold cursor-pointer">Đóng</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* GIAO DIỆN IN Z-REPORT */}
             <div className="hidden print:block print-receipt">

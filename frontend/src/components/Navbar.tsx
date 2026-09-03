@@ -108,28 +108,27 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
     };
 
     const handleLogout = () => {
-        if (window.confirm('Bạn có chắc muốn đăng xuất khỏi ca làm việc?')) {
+        if (window.confirm('Bạn có chắc muốn đăng xuất hoàn toàn khỏi hệ thống?')) {
             localStorage.clear();
             navigate('/login');
         }
     };
 
     const navItems = [
-        { path: '/', name: 'Sơ đồ bàn', icon: Grid, roles: ['ADMIN', 'CASHIER', 'STAFF'] },
-        { path: '/menu', name: 'Thực đơn', icon: UtensilsCrossed, roles: ['ADMIN'] },
-        { path: '/dashboard', name: 'Báo cáo doanh thu', icon: TrendingUp, roles: ['ADMIN'] },
-        { path: '/history', name: 'Lịch sử giao dịch', icon: History, roles: ['ADMIN', 'CASHIER'] },
-        { path: '/kitchen', name: 'Màn hình Bếp (KDS)', icon: ChefHat, roles: ['ADMIN', 'KITCHEN', 'STAFF'] },
-        { path: '/staff', name: 'Quản lý nhân sự', icon: Users, roles: ['ADMIN'] },
-        { path: '/settings', name: 'Cài đặt hệ thống', icon: Settings, roles: ['ADMIN'] },
-    ].filter(item => item.roles.includes(userRole));
+        { path: '/', name: 'Sơ đồ bàn', icon: Grid, show: ['ADMIN', 'CASHIER', 'STAFF'].includes(userRole) },
+        { path: '/menu', name: 'Thực đơn', icon: UtensilsCrossed, show: userRole === 'ADMIN' },
+        { path: '/dashboard', name: 'Báo cáo doanh thu', icon: TrendingUp, show: ['ADMIN', 'CASHIER'].includes(userRole) || currentStaff?.permissions?.canViewReports === true },
+        { path: '/history', name: 'Lịch sử giao dịch', icon: History, show: ['ADMIN', 'CASHIER'].includes(userRole) },
+        { path: '/kitchen', name: 'Màn hình Bếp (KDS)', icon: ChefHat, show: ['ADMIN', 'KITCHEN', 'STAFF'].includes(userRole) },
+        { path: '/staff', name: 'Quản lý nhân sự', icon: Users, show: userRole === 'ADMIN' },
+        { path: '/settings', name: 'Cài đặt hệ thống', icon: Settings, show: userRole === 'ADMIN' },
+    ].filter(item => item.show);
 
     return (
         <>
             <header className="bg-white text-slate-800 border-b border-gray-300 sticky top-0 z-30 select-none shadow-sm print:hidden">
                 <div className="px-4 sm:px-6 flex items-center justify-between h-[52px]">
 
-                    {/* LEFT: Nút Menu 3 gạch & Trạng thái bàn */}
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setIsMainNavOpen(true)}
@@ -144,7 +143,6 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
                         </div>
                     </div>
 
-                    {/* RIGHT: Đồng hồ, Cài đặt, Âm thanh & Widget Đổi ca */}
                     <div className="flex items-center gap-3 shrink-0">
                         <div className="hidden sm:flex flex-col items-end text-right text-xs text-slate-500 pr-3 border-r border-gray-200">
                             <span className="font-mono font-bold text-[#1890ff] flex items-center gap-1">
@@ -179,7 +177,6 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
                 </div>
             </header>
 
-            {/* DRAWER MENU TRƯỢT TỪ TRÁI SANG */}
             {isMainNavOpen && (
                 <div className="fixed inset-0 z-[100] flex font-sans print:hidden">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsMainNavOpen(false)}></div>
@@ -213,15 +210,18 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
                                     <p className="text-[#1890ff] font-semibold mt-0.5">{getRoleLabel(currentStaff?.role)}</p>
                                 </div>
                             </div>
-                            <button onClick={handleLogout} className="flex items-center justify-center gap-2 w-full py-2.5 bg-white text-rose-600 hover:bg-rose-50 rounded-lg text-sm font-bold border border-rose-200 transition-colors cursor-pointer shadow-sm">
-                                <LogOut size={18} /> Đăng xuất ca
-                            </button>
+
+                            {/* CHỈ ADMIN MỚI THẤY NÚT ĐĂNG XUẤT */}
+                            {userRole === 'ADMIN' && (
+                                <button onClick={handleLogout} className="flex items-center justify-center gap-1 w-full py-2.5 bg-white text-rose-600 hover:bg-rose-50 rounded-lg text-sm font-bold border border-rose-200 transition-colors cursor-pointer shadow-sm">
+                                    <LogOut size={20} /> Đăng xuất
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* MODAL MÃ PIN GIAO DIỆN SÁNG (Mới) */}
             {showStaffModal && (
                 <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 select-none font-sans print:hidden">
                     <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg p-6 sm:p-7 shadow-2xl text-slate-800 space-y-5 animate-fade-in relative">

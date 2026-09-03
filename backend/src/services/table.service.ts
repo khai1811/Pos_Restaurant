@@ -25,8 +25,14 @@ export class RestaurantTableService {
     }
 
     async create(data: CreateTableDto | any): Promise<TableEntity> {
+        // 🔥 Ép kiểu tableNumber sang số nguyên để fix triệt để lỗi Prisma
+        const tableNum = Number(data.tableNumber);
+        if (isNaN(tableNum)) {
+            throw new Error('Số bàn không hợp lệ, phải là số nguyên!');
+        }
+
         const existing = await prisma.restaurantTable.findUnique({
-            where: { tableNumber: data.tableNumber },
+            where: { tableNumber: tableNum },
         });
         if (existing) {
             throw new Error('Số bàn đã tồn tại');
@@ -34,10 +40,9 @@ export class RestaurantTableService {
 
         const table = await prisma.restaurantTable.create({
             data: {
-                tableNumber: data.tableNumber,
-                capacity: data.capacity ?? 4,
+                tableNumber: tableNum,
+                capacity: data.capacity ? Number(data.capacity) : 4,
                 status: data.status ?? TableStatus.AVAILABLE,
-                // 🔥 Nhận dữ liệu khu vực từ giao diện để lưu vào Database
                 area: data.area || 'Sảnh chính',
             },
         });
@@ -51,20 +56,28 @@ export class RestaurantTableService {
             throw new Error('Không tìm thấy bàn');
         }
 
-        if (data.tableNumber && data.tableNumber !== table.tableNumber) {
-            const existing = await prisma.restaurantTable.findUnique({
-                where: { tableNumber: data.tableNumber },
-            });
-            if (existing) {
-                throw new Error('Số bàn mới đã tồn tại');
+        const updatePayload: any = { ...data };
+
+        // 🔥 Xử lý ép kiểu an toàn khi user muốn Cập nhật lại số bàn
+        if (data.tableNumber !== undefined) {
+            const tableNum = Number(data.tableNumber);
+            if (isNaN(tableNum)) {
+                throw new Error('Số bàn mới không hợp lệ, phải là số nguyên!');
             }
+
+            if (tableNum !== table.tableNumber) {
+                const existing = await prisma.restaurantTable.findUnique({
+                    where: { tableNumber: tableNum },
+                });
+                if (existing) {
+                    throw new Error('Số bàn mới đã tồn tại');
+                }
+            }
+            updatePayload.tableNumber = tableNum;
         }
 
-        // Tạo payload để update, chắc chắn có trường area
-        const updatePayload: any = { ...data };
-        if (data.area !== undefined) {
-            updatePayload.area = data.area;
-        }
+        if (data.capacity !== undefined) updatePayload.capacity = Number(data.capacity);
+        if (data.area !== undefined) updatePayload.area = data.area;
 
         const updated = await prisma.restaurantTable.update({
             where: { id },
