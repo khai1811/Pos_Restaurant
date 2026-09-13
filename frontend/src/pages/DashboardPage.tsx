@@ -74,7 +74,6 @@ export default function DashboardPage() {
     const grossProfit = totalRevenue - estimatedCost;
     const profitMargin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
     const averageOrderValue = totalOrdersCount > 0 ? totalRevenue / totalOrdersCount : 0;
-    const totalCustomers = Math.round(totalOrdersCount * 2.5);
 
     const hourlyChartData = useMemo(() => {
         const hours = Array.from({ length: 15 }, (_, i) => i + 8);
@@ -134,44 +133,42 @@ export default function DashboardPage() {
                 `}
             </style>
 
-            {/* CHUẨN FORM APP TABLET: h-[100dvh] ép màn hình linh động */}
-            <div className="flex flex-col h-[100dvh] w-full bg-[#f0f2f5] text-slate-900 font-sans overflow-hidden print:hidden">
+            <div className="flex flex-col h-[100dvh] w-full bg-[#f0f2f5] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden print:hidden transition-colors duration-300">
                 <Navbar />
 
-                {/* MAIN CONTENT flex-1 bung full dọc, tự động overflow */}
                 <main className="flex-1 w-full overflow-y-auto p-4 md:p-6 space-y-5 block">
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm w-full">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm w-full transition-colors duration-300">
                         <div>
-                            <h2 className="text-xl font-bold text-slate-800">Báo Cáo Doanh Thu</h2>
-                            <p className="text-[13px] text-slate-500 mt-0.5">Tổng hợp dữ liệu kinh doanh trong ngày</p>
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-white">Báo Cáo Doanh Thu</h2>
+                            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">Tổng hợp dữ liệu kinh doanh trong ngày</p>
                         </div>
                         <div className="flex items-center flex-wrap gap-2.5">
-                            <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700">
                                 <Calendar size={16} className="text-[#1890ff]" />
-                                <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-[13px] font-bold text-slate-700 focus:outline-none cursor-pointer" />
+                                <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent text-[13px] font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer [color-scheme:light] dark:[color-scheme:dark]" />
                             </div>
-                            <button onClick={() => setZReportModal(true)} className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer">
+                            <button onClick={() => setZReportModal(true)} className="flex items-center gap-1.5 bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer">
                                 <FileText size={16} /> Z-Report Ca
                             </button>
                             <button onClick={exportCSV} className="flex items-center gap-1.5 bg-[#1890ff] hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer">
                                 <Download size={16} /> Xuất Excel
                             </button>
-                            <button onClick={() => fetchOrders(false)} disabled={isRefreshing} className="flex items-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-3 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer disabled:opacity-50">
-                                <RefreshCw size={16} className={isRefreshing ? "animate-spin text-[#1890ff]" : "text-slate-500"} /> Làm mới
+                            <button onClick={() => fetchOrders(false)} disabled={isRefreshing} className="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-lg text-[13px] font-bold shadow-sm transition cursor-pointer disabled:opacity-50">
+                                <RefreshCw size={16} className={isRefreshing ? "animate-spin text-[#1890ff]" : "text-slate-500 dark:text-slate-400"} /> Làm mới
                             </button>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
                         {[
-                            { title: 'Tổng Doanh Thu', val: `${totalRevenue.toLocaleString('vi-VN')} đ`, icon: DollarSign, color: 'text-blue-600', bg: 'bg-blue-50' },
-                            { title: 'Lợi Nhuận Gộp', val: `${grossProfit.toLocaleString('vi-VN')} đ`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                            { title: 'Tỷ Suất LN Biên', val: `${profitMargin.toFixed(1)}%`, icon: Percent, color: 'text-purple-600', bg: 'bg-purple-50' },
-                            { title: 'Đơn Trung Bình (AOV)', val: `${Math.round(averageOrderValue).toLocaleString('vi-VN')} đ`, icon: ShoppingBag, color: 'text-amber-600', bg: 'bg-amber-50' }
+                            { title: 'Tổng Doanh Thu', val: `${totalRevenue.toLocaleString('vi-VN')} đ`, icon: DollarSign, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+                            { title: 'Lợi Nhuận Gộp', val: `${grossProfit.toLocaleString('vi-VN')} đ`, icon: TrendingUp, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+                            { title: 'Tỷ Suất LN Biên', val: `${profitMargin.toFixed(1)}%`, icon: Percent, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-500/10' },
+                            { title: 'Đơn Trung Bình (AOV)', val: `${Math.round(averageOrderValue).toLocaleString('vi-VN')} đ`, icon: ShoppingBag, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10' }
                         ].map((kpi, i) => (
-                            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div key={i} className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between transition-colors">
                                 <div>
-                                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{kpi.title}</p>
+                                    <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{kpi.title}</p>
                                     <h3 className={`text-xl font-black mt-1 ${kpi.color}`}>{kpi.val}</h3>
                                 </div>
                                 <div className={`p-3 rounded-xl ${kpi.bg} ${kpi.color}`}><kpi.icon size={24} /></div>
@@ -180,10 +177,10 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 w-full">
-                        <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
                             <div className="flex items-center gap-2 mb-6">
                                 <LineChartIcon size={20} className="text-[#1890ff]" />
-                                <h3 className="text-[15px] font-bold text-slate-800">Doanh thu theo giờ (Peak Hours)</h3>
+                                <h3 className="text-[15px] font-bold text-slate-800 dark:text-white">Doanh thu theo giờ (Peak Hours)</h3>
                             </div>
                             <div className="h-64 w-full">
                                 <ResponsiveContainer width="100%" height="100%">
@@ -204,22 +201,22 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col transition-colors">
                             <div className="flex items-center gap-2 mb-4">
                                 <Award size={20} className="text-[#1890ff]" />
-                                <h3 className="text-[15px] font-bold text-slate-800">Top Bán Chạy</h3>
+                                <h3 className="text-[15px] font-bold text-slate-800 dark:text-white">Top Bán Chạy</h3>
                             </div>
                             <div className="flex-1 overflow-y-auto max-h-64 space-y-3.5 pr-1 scrollbar-none w-full">
                                 {topDishes.length === 0 ? (
-                                    <div className="h-full flex items-center justify-center text-slate-400 text-sm">Chưa có dữ liệu</div>
+                                    <div className="h-full flex items-center justify-center text-slate-400 dark:text-slate-500 text-sm">Chưa có dữ liệu</div>
                                 ) : (
                                     topDishes.map((dish, index) => (
                                         <div key={dish.name} className="space-y-1.5 w-full">
-                                            <div className="flex justify-between text-xs font-bold text-slate-700">
+                                            <div className="flex justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
                                                 <span className="truncate max-w-[140px]">{index + 1}. {dish.name}</span>
-                                                <span className="text-[#1890ff]">{dish.quantity} phần</span>
+                                                <span className="text-[#1890ff] dark:text-[#3ba0ff]">{dish.quantity} phần</span>
                                             </div>
-                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                            <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                                                 <div className="bg-[#1890ff] h-full rounded-full transition-all duration-500" style={{ width: `${(dish.quantity / maxDishQty) * 100}%` }} />
                                             </div>
                                         </div>
@@ -229,32 +226,32 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden w-full">
-                        <div className="p-6 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden w-full transition-colors">
+                        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                                 <FileText size={20} className="text-[#1890ff]" /> Danh Sách Hóa Đơn ({filteredOrders.length})
                             </h3>
                             <div className="relative w-full md:w-64 shrink-0">
-                                <Search size={16} className="absolute left-3 top-3 text-slate-400" />
+                                <Search size={16} className="absolute left-3 top-3 text-slate-400 dark:text-slate-500" />
                                 <input
                                     type="text"
                                     placeholder="Tìm theo bàn, mã đơn..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#1890ff]"
+                                    className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#1890ff]"
                                 />
                             </div>
                         </div>
 
                         {loading ? (
-                            <div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu...</div>
+                            <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-medium">Đang tải dữ liệu...</div>
                         ) : filteredOrders.length === 0 ? (
-                            <div className="p-8 text-center text-slate-400">Không có giao dịch nào trong ngày đã chọn</div>
+                            <div className="p-8 text-center text-slate-400 dark:text-slate-500">Không có giao dịch nào trong ngày đã chọn</div>
                         ) : (
                             <div className="overflow-x-auto w-full">
                                 <table className="w-full text-left text-[13px] whitespace-nowrap">
                                     <thead>
-                                        <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                                        <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
                                             <th className="p-4 font-bold">Mã HĐ</th>
                                             <th className="p-4 font-bold">Bàn</th>
                                             <th className="p-4 font-bold">Thời gian</th>
@@ -262,14 +259,14 @@ export default function DashboardPage() {
                                             <th className="p-4 font-bold text-right">Tổng tiền</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
                                         {filteredOrders.map((order) => (
-                                            <tr key={order.id} className="hover:bg-blue-50 transition-colors">
-                                                <td className="p-4 font-mono font-bold text-slate-700">#{order.id.slice(-6).toUpperCase()}</td>
-                                                <td className="p-4 font-bold text-[#1890ff]">{order.table?.tableNumber ? `Bàn ${order.table.tableNumber}` : 'Mang về'}</td>
-                                                <td className="p-4 text-slate-500 font-medium">{new Date(order.createdAt).toLocaleTimeString('vi-VN')} - {new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
-                                                <td className="p-4 text-slate-600">{order.staff?.fullName || order.staff?.username || '—'}</td>
-                                                <td className="p-4 text-right font-black text-slate-800">{Number(order.totalAmount).toLocaleString('vi-VN')} đ</td>
+                                            <tr key={order.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                                                <td className="p-4 font-mono font-bold text-slate-700 dark:text-slate-300">#{order.id.slice(-6).toUpperCase()}</td>
+                                                <td className="p-4 font-bold text-[#1890ff] dark:text-[#3ba0ff]">{order.table?.tableNumber ? `Bàn ${order.table.tableNumber}` : 'Mang về'}</td>
+                                                <td className="p-4 text-slate-500 dark:text-slate-400 font-medium">{new Date(order.createdAt).toLocaleTimeString('vi-VN')} - {new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
+                                                <td className="p-4 text-slate-600 dark:text-slate-400">{order.staff?.fullName || order.staff?.username || '—'}</td>
+                                                <td className="p-4 text-right font-black text-slate-800 dark:text-white">{Number(order.totalAmount).toLocaleString('vi-VN')} đ</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -283,21 +280,21 @@ export default function DashboardPage() {
             {/* Modal Z-Report */}
             {zReportModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 print:hidden">
-                    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4 animate-fade-in">
-                        <div className="text-center border-b border-slate-200 pb-3">
-                            <h3 className="text-[16px] font-black text-slate-800 uppercase tracking-wide">Z-REPORT CUỐI CA</h3>
-                            <p className="text-[11px] text-slate-500 mt-1">Ngày báo cáo: {filterDate}</p>
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl space-y-4 animate-fade-in border dark:border-slate-800">
+                        <div className="text-center border-b border-slate-200 dark:border-slate-700 pb-3">
+                            <h3 className="text-[16px] font-black text-slate-800 dark:text-white uppercase tracking-wide">Z-REPORT CUỐI CA</h3>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Ngày báo cáo: {filterDate}</p>
                         </div>
                         <div className="space-y-2 text-[13px]">
-                            <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Hóa đơn:</span><span className="font-bold text-slate-800">{totalOrdersCount} đơn</span></div>
-                            <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Doanh thu:</span><span className="font-black text-[#1890ff]">{totalRevenue.toLocaleString('vi-VN')} đ</span></div>
-                            <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Ước tính giá vốn:</span><span className="font-bold text-slate-600">{estimatedCost.toLocaleString('vi-VN')} đ</span></div>
-                            <div className="flex justify-between py-1 border-b border-slate-100"><span className="text-slate-500 font-medium">Lợi nhuận gộp:</span><span className="font-bold text-emerald-600">{grossProfit.toLocaleString('vi-VN')} đ</span></div>
-                            <div className="flex justify-between py-1"><span className="text-slate-500 font-medium">AOV (TB đơn):</span><span className="font-bold text-indigo-600">{Math.round(averageOrderValue).toLocaleString('vi-VN')} đ</span></div>
+                            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span className="text-slate-500 dark:text-slate-400 font-medium">Hóa đơn:</span><span className="font-bold text-slate-800 dark:text-white">{totalOrdersCount} đơn</span></div>
+                            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span className="text-slate-500 dark:text-slate-400 font-medium">Doanh thu:</span><span className="font-black text-[#1890ff] dark:text-[#3ba0ff]">{totalRevenue.toLocaleString('vi-VN')} đ</span></div>
+                            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span className="text-slate-500 dark:text-slate-400 font-medium">Ước tính giá vốn:</span><span className="font-bold text-slate-600 dark:text-slate-300">{estimatedCost.toLocaleString('vi-VN')} đ</span></div>
+                            <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800"><span className="text-slate-500 dark:text-slate-400 font-medium">Lợi nhuận gộp:</span><span className="font-bold text-emerald-600 dark:text-emerald-400">{grossProfit.toLocaleString('vi-VN')} đ</span></div>
+                            <div className="flex justify-between py-1"><span className="text-slate-500 dark:text-slate-400 font-medium">AOV (TB đơn):</span><span className="font-bold text-indigo-600 dark:text-indigo-400">{Math.round(averageOrderValue).toLocaleString('vi-VN')} đ</span></div>
                         </div>
-                        <div className="flex gap-2 pt-2 border-t border-slate-200 mt-2">
+                        <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-700 mt-2">
                             <button onClick={() => window.print()} className="flex-1 bg-[#1890ff] hover:bg-blue-600 text-white py-2.5 rounded-lg text-[13px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm"><Printer size={16} /> In Z-Report</button>
-                            <button onClick={() => setZReportModal(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 px-4 rounded-lg text-[13px] font-bold cursor-pointer">Đóng</button>
+                            <button onClick={() => setZReportModal(false)} className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-2.5 px-4 rounded-lg text-[13px] font-bold cursor-pointer transition-colors">Đóng</button>
                         </div>
                     </div>
                 </div>

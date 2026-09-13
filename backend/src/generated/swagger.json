@@ -221,6 +221,91 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"_36_Enums.PaymentMethod": {
+				"type": "string",
+				"enum": [
+					"CASH",
+					"CARD",
+					"MOMO",
+					"VNPAY",
+					"STRIPE",
+					"SPLIT"
+				]
+			},
+			"PaymentMethod": {
+				"$ref": "#/components/schemas/_36_Enums.PaymentMethod"
+			},
+			"PaymentResponseDto": {
+				"properties": {
+					"id": {
+						"type": "string"
+					},
+					"orderId": {
+						"type": "string"
+					},
+					"totalAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"paidAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"changeAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"method": {
+						"$ref": "#/components/schemas/PaymentMethod"
+					},
+					"paymentTime": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"orderId",
+					"totalAmount",
+					"paidAmount",
+					"changeAmount",
+					"method",
+					"paymentTime"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreatePaymentDto": {
+				"properties": {
+					"orderId": {
+						"type": "string"
+					},
+					"totalAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"paidAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"changeAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"method": {
+						"$ref": "#/components/schemas/PaymentMethod"
+					}
+				},
+				"required": [
+					"orderId",
+					"totalAmount",
+					"paidAmount",
+					"changeAmount",
+					"method"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"_36_Enums.OrderStatus": {
 				"type": "string",
 				"enum": [
@@ -1299,6 +1384,127 @@
 						"in": "query",
 						"name": "endDate",
 						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/api/payments": {
+			"get": {
+				"operationId": "GetAllPayments",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/PaymentResponseDto"
+									},
+									"type": "array"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "CreatePayment",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaymentResponseDto"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request"
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"allOf": [
+									{
+										"$ref": "#/components/schemas/CreatePaymentDto"
+									},
+									{
+										"properties": {
+											"transferAmount": {
+												"type": "number",
+												"format": "double"
+											},
+											"cashAmount": {
+												"type": "number",
+												"format": "double"
+											}
+										},
+										"type": "object"
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/payments/{id}": {
+			"get": {
+				"operationId": "GetPaymentById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PaymentResponseDto"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Payment not found"
+					}
+				},
+				"tags": [
+					"Payment"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
 						"schema": {
 							"type": "string"
 						}

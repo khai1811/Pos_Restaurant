@@ -8,7 +8,17 @@ export class MenuItemService {
 
         const items = await prisma.menuItem.findMany({
             where: whereCondition,
-            include: {
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+                // 🔥 NẾU TỐC ĐỘ VẪN CHẬM, HÃY THÊM DẤU // VÀO TRƯỚC DÒNG BÊN DƯỚI ĐỂ TẮT TẢI ẢNH (Base64)
+                imageUrl: true,
+                isAvailable: true,
+                popular: true,
+                categoryId: true,
+                createdAt: true,
                 category: {
                     select: { name: true },
                 },
@@ -17,12 +27,12 @@ export class MenuItemService {
         });
 
         return items.map(
-            (item) =>
+            (item: any) =>
                 new MenuItemEntity({
                     ...item,
                     price: Number(item.price),
                     imageUrl: item.imageUrl,
-                    popular: item.popular, // 🔥 Lấy dữ liệu Hot từ DB
+                    popular: item.popular,
                     categoryName: item.category?.name,
                 })
         );
@@ -31,7 +41,16 @@ export class MenuItemService {
     async getById(id: string): Promise<MenuItemEntity | null> {
         const item = await prisma.menuItem.findUnique({
             where: { id },
-            include: {
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+                imageUrl: true,
+                isAvailable: true,
+                popular: true,
+                categoryId: true,
+                createdAt: true,
                 category: {
                     select: { name: true },
                 },
@@ -44,7 +63,7 @@ export class MenuItemService {
             ...item,
             price: Number(item.price),
             imageUrl: item.imageUrl,
-            popular: item.popular, // 🔥 Lấy dữ liệu Hot từ DB
+            popular: item.popular,
             categoryName: item.category?.name,
         });
     }
@@ -57,7 +76,6 @@ export class MenuItemService {
             throw new Error('Danh mục không tồn tại');
         }
 
-        // Hứng linh hoạt từ image hoặc imageUrl do DTO chuyển lên
         const imageValue = data.imageUrl || (data as any).image || null;
 
         const item = await prisma.menuItem.create({
@@ -67,10 +85,19 @@ export class MenuItemService {
                 price: data.price,
                 imageUrl: imageValue,
                 isAvailable: data.isAvailable ?? true,
-                popular: data.popular ?? false, // 🔥 Lưu cờ Hot vào DB
+                popular: data.popular ?? false,
                 categoryId: data.categoryId,
             },
-            include: {
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+                imageUrl: true,
+                isAvailable: true,
+                popular: true,
+                categoryId: true,
+                createdAt: true,
                 category: {
                     select: { name: true },
                 },
@@ -81,7 +108,7 @@ export class MenuItemService {
             ...item,
             price: Number(item.price),
             imageUrl: item.imageUrl,
-            popular: item.popular, // 🔥 Lấy dữ liệu Hot từ DB
+            popular: item.popular,
             categoryName: item.category?.name,
         });
     }
@@ -101,7 +128,6 @@ export class MenuItemService {
             }
         }
 
-        // Hứng linh hoạt giá trị ảnh khi cập nhật
         const imageValue =
             data.imageUrl !== undefined
                 ? data.imageUrl
@@ -112,7 +138,7 @@ export class MenuItemService {
             description: data.description,
             price: data.price,
             isAvailable: data.isAvailable,
-            popular: data.popular, // 🔥 Cập nhật cờ Hot vào DB
+            popular: data.popular,
             categoryId: data.categoryId,
         };
 
@@ -123,7 +149,16 @@ export class MenuItemService {
         const updated = await prisma.menuItem.update({
             where: { id },
             data: updateData,
-            include: {
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+                imageUrl: true,
+                isAvailable: true,
+                popular: true,
+                categoryId: true,
+                createdAt: true,
                 category: {
                     select: { name: true },
                 },
@@ -134,7 +169,7 @@ export class MenuItemService {
             ...updated,
             price: Number(updated.price),
             imageUrl: updated.imageUrl,
-            popular: updated.popular, // 🔥 Lấy dữ liệu Hot từ DB
+            popular: updated.popular,
             categoryName: updated.category?.name,
         });
     }

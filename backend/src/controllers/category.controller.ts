@@ -85,3 +85,5 @@ export class CategoryController extends Controller {
         }
     }
 }
+
+// trigger tsoa

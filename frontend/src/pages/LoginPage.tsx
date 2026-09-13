@@ -46,40 +46,40 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white select-none">
-            <div className="bg-gray-900 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-800">
-                <h2 className="text-3xl font-bold text-center mb-2 text-amber-500">POS Nhà Hàng</h2>
-                <p className="text-center text-gray-400 mb-6">Đăng nhập hệ thống quản lý</p>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white select-none transition-colors duration-300">
+            <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl dark:shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 transition-colors duration-300">
+                <h2 className="text-3xl font-bold text-center mb-2 text-[#1890ff] dark:text-[#3ba0ff]">POS Nhà Hàng</h2>
+                <p className="text-center text-slate-500 dark:text-slate-400 mb-6">Đăng nhập hệ thống quản lý</p>
 
                 {error && (
-                    <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg mb-4 text-sm">
+                    <div className="bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/50 text-rose-600 dark:text-rose-400 p-3 rounded-lg mb-4 text-sm">
                         {error}
                     </div>
                 )}
 
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Tên đăng nhập</label>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tên đăng nhập</label>
                         <input
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             required
                             disabled={loading}
-                            className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-amber-500 text-white disabled:opacity-50"
+                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:border-[#1890ff] dark:focus:border-[#3ba0ff] text-slate-900 dark:text-white disabled:opacity-50 transition-colors duration-300"
                             placeholder="nguyenvanA"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-1">Mật khẩu</label>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mật khẩu</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             disabled={loading}
-                            className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-amber-500 text-white disabled:opacity-50"
+                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:border-[#1890ff] dark:focus:border-[#3ba0ff] text-slate-900 dark:text-white disabled:opacity-50 transition-colors duration-300"
                             placeholder="••••••••"
                         />
                     </div>
@@ -87,7 +87,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 bg-amber-600 hover:bg-amber-500 transition-colors font-semibold rounded-lg text-white shadow-lg shadow-amber-600/20 disabled:opacity-50 cursor-pointer"
+                        className="w-full py-3 mt-2 bg-[#1890ff] hover:bg-blue-600 transition-colors font-bold rounded-lg text-white shadow-lg shadow-[#1890ff]/20 disabled:opacity-50 cursor-pointer"
                     >
                         {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
                     </button>

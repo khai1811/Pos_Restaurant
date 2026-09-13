@@ -51,21 +51,39 @@ export class OrderService {
     }
 
     // =========================================================
-    // GET ALL
+    // GET ALL (SIÊU TỐC: DÙNG SELECT LOẠI BỎ ẢNH NẶNG, GIỚI HẠN 100 ĐƠN)
     // =========================================================
     async getAll(status?: OrderStatus): Promise<OrderEntity[]> {
         const whereCondition = status ? { status } : {};
 
         const orders = await prisma.order.findMany({
             where: whereCondition,
-            include: {
-                table: true,
-                staff: true,
+            take: 100,
+            select: {
+                id: true,
+                totalAmount: true,
+                status: true,
+                createdAt: true,
+                tableId: true,
+                staffId: true,
+                table: { select: { id: true, tableNumber: true, area: true } },
+                staff: { select: { id: true, fullName: true, username: true } },
                 orderItems: {
-                    include: {
-                        menuItem: true,
-                    },
-                },
+                    select: {
+                        id: true,
+                        quantity: true,
+                        price: true,
+                        subtotal: true,
+                        status: true,
+                        menuItem: {
+                            select: {
+                                id: true,
+                                name: true,
+                                price: true
+                            }
+                        }
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc',
@@ -81,14 +99,31 @@ export class OrderService {
     async getById(id: string): Promise<OrderEntity | null> {
         const order = await prisma.order.findUnique({
             where: { id },
-            include: {
-                table: true,
-                staff: true,
+            select: {
+                id: true,
+                totalAmount: true,
+                status: true,
+                createdAt: true,
+                tableId: true,
+                staffId: true,
+                table: { select: { id: true, tableNumber: true, area: true } },
+                staff: { select: { id: true, fullName: true, username: true } },
                 orderItems: {
-                    include: {
-                        menuItem: true,
-                    },
-                },
+                    select: {
+                        id: true,
+                        quantity: true,
+                        price: true,
+                        subtotal: true,
+                        status: true,
+                        menuItem: {
+                            select: {
+                                id: true,
+                                name: true,
+                                price: true
+                            }
+                        }
+                    }
+                }
             },
         });
 
@@ -97,7 +132,7 @@ export class OrderService {
     }
 
     // =========================================================
-    // CREATE / ADD ITEMS TO ORDER (Hỗ trợ cả Bàn và Mang về)
+    // CREATE / ADD ITEMS TO ORDER
     // =========================================================
     async create(data: CreateOrderDto & { userId?: string; }): Promise<OrderEntity> {
         if (!data.userId) throw new Error('Không xác định được nhân viên đăng nhập');
@@ -179,10 +214,25 @@ export class OrderService {
                 targetOrder = await tx.order.update({
                     where: { id: existingOrder.id },
                     data: { totalAmount: newTotalAmount },
-                    include: {
-                        table: true,
-                        staff: true,
-                        orderItems: { include: { menuItem: true } },
+                    select: {
+                        id: true,
+                        totalAmount: true,
+                        status: true,
+                        createdAt: true,
+                        tableId: true,
+                        staffId: true,
+                        table: { select: { id: true, tableNumber: true, area: true } },
+                        staff: { select: { id: true, fullName: true, username: true } },
+                        orderItems: {
+                            select: {
+                                id: true,
+                                quantity: true,
+                                price: true,
+                                subtotal: true,
+                                status: true,
+                                menuItem: { select: { id: true, name: true, price: true } }
+                            }
+                        }
                     },
                 });
 
@@ -197,10 +247,25 @@ export class OrderService {
 
                 targetOrder = await tx.order.create({
                     data: createData,
-                    include: {
-                        table: true,
-                        staff: true,
-                        orderItems: { include: { menuItem: true } },
+                    select: {
+                        id: true,
+                        totalAmount: true,
+                        status: true,
+                        createdAt: true,
+                        tableId: true,
+                        staffId: true,
+                        table: { select: { id: true, tableNumber: true, area: true } },
+                        staff: { select: { id: true, fullName: true, username: true } },
+                        orderItems: {
+                            select: {
+                                id: true,
+                                quantity: true,
+                                price: true,
+                                subtotal: true,
+                                status: true,
+                                menuItem: { select: { id: true, name: true, price: true } }
+                            }
+                        }
                     },
                 });
 
@@ -228,10 +293,25 @@ export class OrderService {
         const updated = await prisma.order.update({
             where: { id },
             data: { status: data.status },
-            include: {
-                table: true,
-                staff: true,
-                orderItems: { include: { menuItem: true } },
+            select: {
+                id: true,
+                totalAmount: true,
+                status: true,
+                createdAt: true,
+                tableId: true,
+                staffId: true,
+                table: { select: { id: true, tableNumber: true, area: true } },
+                staff: { select: { id: true, fullName: true, username: true } },
+                orderItems: {
+                    select: {
+                        id: true,
+                        quantity: true,
+                        price: true,
+                        subtotal: true,
+                        status: true,
+                        menuItem: { select: { id: true, name: true, price: true } }
+                    }
+                }
             },
         });
 
@@ -242,16 +322,12 @@ export class OrderService {
             });
         }
 
-        // 🔥 NẾU BẾP HOÀN TẤT TẤT CẢ MÓN TRONG ĐƠN (SERVED)
         if (data.status === 'SERVED') {
-
-            // 1. Cập nhật tất cả chi tiết món ăn thành SERVED để Frontend hiển thị "Đã xong"
             await prisma.orderItem.updateMany({
                 where: { orderId: id },
                 data: { status: 'SERVED' }
             });
 
-            // 2. Đổi bàn sang MÀU ĐỎ (Chờ thanh toán) trên Sơ đồ bàn
             if (updated.tableId) {
                 await prisma.restaurantTable.update({
                     where: { id: updated.tableId },

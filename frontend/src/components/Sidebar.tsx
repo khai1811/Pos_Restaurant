@@ -15,11 +15,9 @@ export default function AppSidebar() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Lấy thông tin user đang đăng nhập
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    const role = currentUser?.role?.toUpperCase() || 'STAFF'; // Mặc định là staff
+    const role = currentUser?.role?.toUpperCase() || 'STAFF';
 
-    // Định nghĩa các mục menu và phân quyền (allowedRoles)
     const allNavItems = [
         { path: '/', name: 'Sơ đồ bàn', icon: Grid, roles: ['ADMIN', 'CASHIER', 'STAFF'] },
         { path: '/menu', name: 'Thực đơn', icon: UtensilsCrossed, roles: ['ADMIN'] },
@@ -30,7 +28,6 @@ export default function AppSidebar() {
         { path: '/settings', name: 'Cài đặt hệ thống', icon: Settings, roles: ['ADMIN'] },
     ];
 
-    // Lọc menu theo role
     const navItems = allNavItems.filter(item => item.roles.includes(role));
 
     const handleLogout = () => {
@@ -43,10 +40,10 @@ export default function AppSidebar() {
     };
 
     return (
-        < aside className="w-[76px] lg:w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 select-none border-r border-slate-800 transition-all duration-300 z-20" >
+        <aside className="w-[76px] lg:w-64 bg-slate-900 dark:bg-slate-950 text-slate-300 flex flex-col shrink-0 select-none border-r border-slate-800 dark:border-slate-800/80 transition-all duration-300 z-20">
 
             {/* Header / Logo */}
-            < div className="h-16 lg:h-18 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800" >
+            <div className="h-16 lg:h-18 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800 dark:border-slate-800/80">
                 <div className="w-10 h-10 lg:w-9 lg:h-9 rounded-xl bg-[#ff7f3f] flex items-center justify-center font-black text-white text-lg shadow-md shrink-0">
                     POS
                 </div>
@@ -56,10 +53,10 @@ export default function AppSidebar() {
                         Ca: {role}
                     </span>
                 </div>
-            </div >
+            </div>
 
             {/* Danh sách Menu điều hướng */}
-            < div className="flex-1 py-4 px-2 lg:px-3 space-y-1.5 overflow-y-auto scrollbar-none" >
+            <div className="flex-1 py-4 px-2 lg:px-3 space-y-1.5 overflow-y-auto scrollbar-none">
                 {
                     navItems.map((item) => {
                         const Icon = item.icon;
@@ -81,10 +78,10 @@ export default function AppSidebar() {
                         );
                     })
                 }
-            </div >
+            </div>
 
             {/* Thông tin nhân viên & Nút Đăng xuất */}
-            < div className="p-3 lg:p-4 border-t border-slate-800 bg-slate-950/40 flex flex-col items-center lg:items-stretch" >
+            <div className="p-3 lg:p-4 border-t border-slate-800 dark:border-slate-800/80 bg-slate-950/40 dark:bg-slate-900/50 flex flex-col items-center lg:items-stretch">
                 <div className="flex items-center justify-center lg:justify-start gap-3 mb-4 lg:mb-3">
                     <img
                         src={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.fullName || 'User')}&background=ff7f3f&color=fff`}
@@ -100,12 +97,12 @@ export default function AppSidebar() {
                 <button
                     onClick={handleLogout}
                     title="Đăng xuất ca"
-                    className="w-full flex items-center justify-center gap-2 py-3 lg:py-2.5 rounded-xl bg-slate-800 hover:bg-rose-600/20 hover:text-rose-400 hover:border-rose-500/30 border border-slate-700 text-slate-300 text-[13px] lg:text-xs font-bold transition-all cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 py-3 lg:py-2.5 rounded-xl bg-slate-800 dark:bg-slate-900 hover:bg-rose-600/20 dark:hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 border border-slate-700 dark:border-slate-800 text-slate-300 text-[13px] lg:text-xs font-bold transition-all cursor-pointer"
                 >
                     <LogOut size={18} className="lg:w-[15px] lg:h-[15px] shrink-0" />
                     <span className="hidden lg:block">Đăng Xuất</span>
                 </button>
-            </div >
-        </aside >
+            </div>
+        </aside>
     );
 }

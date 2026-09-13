@@ -41,7 +41,6 @@ export default function KitchenPage() {
 
             rawOrders.forEach((o: any) => {
                 const status = o.status?.toUpperCase();
-                // Bỏ qua các đơn đã hoàn tất, đã hủy hoặc đã phục vụ
                 if (status === 'CANCELLED' || status === 'COMPLETED' || status === 'PAID' || status === 'SERVED') {
                     return;
                 }
@@ -123,16 +122,12 @@ export default function KitchenPage() {
     const orderCount = Object.keys(activeOrders).length;
 
     return (
-        /* VỎ APP TABLET BẤT TỬ: Cố định 100dvh, chặn vuốt nảy, chặn bôi đen */
-        <div className="fixed inset-0 flex flex-col w-screen h-[100dvh] bg-[#e2e8f0] text-slate-900 font-sans overflow-hidden overscroll-none select-none print:hidden">
-
-            {/* Navbar hệ thống */}
-            <div className="shrink-0 z-20 shadow-sm border-b border-slate-200/60">
+        <div className="fixed inset-0 flex flex-col w-screen h-[100dvh] bg-[#e2e8f0] dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans overflow-hidden overscroll-none select-none print:hidden transition-colors duration-300">
+            <div className="shrink-0 z-20 shadow-sm border-b border-slate-200/60 dark:border-slate-800/60">
                 <Navbar />
             </div>
 
-            {/* Header KDS riêng biệt cho Bếp (Dark Theme để dễ nhìn từ xa) */}
-            <div className="shrink-0 bg-slate-900 px-5 py-3 flex items-center justify-between shadow-md z-10 text-white">
+            <div className="shrink-0 bg-slate-900 dark:bg-slate-900 px-5 py-3 flex items-center justify-between shadow-md z-10 text-white">
                 <div className="flex items-center gap-4">
                     <div className="w-11 h-11 bg-amber-500 rounded-xl flex items-center justify-center text-slate-900 shadow-inner">
                         <ChefHat size={26} strokeWidth={2.5} />
@@ -156,10 +151,9 @@ export default function KitchenPage() {
                 </button>
             </div>
 
-            {/* MAIN CONTENT: Component KitchenDisplay sẽ lo việc scroll ngang/dọc bên trong */}
             <main className="flex-1 w-full relative overflow-hidden p-4 md:p-5">
                 {loading ? (
-                    <div className="absolute inset-4 flex flex-col items-center justify-center text-slate-500 bg-white/50 backdrop-blur-sm rounded-3xl border border-white/60 shadow-sm">
+                    <div className="absolute inset-4 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-3xl border border-white/60 dark:border-slate-800/60 shadow-sm transition-colors duration-300">
                         <div className="w-12 h-12 border-4 border-[#1890ff] border-t-transparent rounded-full animate-spin mb-4 shadow-sm"></div>
                         <span className="font-bold text-[15px]">Đang lấy dữ liệu từ hệ thống...</span>
                     </div>

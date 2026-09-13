@@ -5,6 +5,7 @@ import { OrderStatus, TableStatus } from '@prisma/client';
 export class PaymentService {
     async getAll(): Promise<PaymentResponseDto[]> {
         const payments = await prisma.payment.findMany({
+            take: 100, // 🔥 Giới hạn 100 giao dịch gần nhất để chống chậm hệ thống
             orderBy: { id: 'desc' },
         });
 
