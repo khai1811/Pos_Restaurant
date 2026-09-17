@@ -60,12 +60,12 @@ export const orderApi = {
         paidAmount: number;
         changeAmount: number;
         method: string;
+        cashAmount?: number;
+        transferAmount?: number;
     }) => {
-        // 🔥 Đã fix lỗi 404: Tận dụng API update status có sẵn của Backend
-        // Thay vì gọi /payments, chúng ta gọi PUT /orders/{id}/status để chuyển thành PAID
-        const response = await axiosClient.put(`/orders/${data.orderId}/status`, {
-            status: 'PAID'
-        });
+        // 🔥 ĐÃ FIX: Gửi toàn bộ dữ liệu thanh toán (gồm cả tổng tiền đã trừ chiết khấu) 
+        // thẳng vào API Payments của Backend để lưu đồng bộ.
+        const response = await axiosClient.post('/payments', data);
         return response.data;
     },
 

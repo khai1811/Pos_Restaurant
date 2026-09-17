@@ -863,11 +863,7 @@
 				"tags": [
 					"User"
 				],
-				"security": [
-					{
-						"bearerAuth": []
-					}
-				],
+				"security": [],
 				"parameters": []
 			},
 			"post": {

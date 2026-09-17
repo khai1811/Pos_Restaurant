@@ -43,6 +43,13 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
         const interval = setInterval(updateTime, 1000);
         return () => clearInterval(interval);
     }, []);
+    useEffect(() => {
+        const token = localStorage.getItem('accessToken');
+        const user = localStorage.getItem('user');
+        if (!token || !user) {
+            handleOpenStaffModal();
+        }
+    }, []);
 
     const toggleSound = () => {
         sound.enabled = !soundEnabled;
@@ -71,10 +78,16 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
 
     const handleVerifyPin = async () => {
         if (!selectedStaff) return;
-        if (pinInput.length !== 4) { setPinError('Vui lòng nhập đủ 4 số PIN!'); return; }
+        if (pinInput.length !== 4) {
+            setPinError('Vui lòng nhập đủ 4 số PIN!');
+            return;
+        }
 
         try {
-            const response = await axiosClient.post('/auth/pin-login', { userId: selectedStaff.id, pin: pinInput });
+            const response = await axiosClient.post('/auth/pin-login', {
+                userId: selectedStaff.id,
+                pin: pinInput
+            });
             const token = response.data.token || response.data.accessToken;
             if (token) localStorage.setItem('accessToken', token);
 
@@ -89,8 +102,12 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
             setPinInput('');
 
             const role = loggedInUser?.role?.toUpperCase();
-            if (role === 'KITCHEN') navigate('/kitchen');
-            else navigate('/');
+            if (role === 'KITCHEN') {
+                navigate('/kitchen');
+            } else {
+                // Ép trình duyệt tải lại trang để API tự động lấy dữ liệu bàn bằng token mới
+                window.location.href = '/';
+            }
         } catch (err: any) {
             sound.play('error');
             setPinError(err.response?.data?.message || 'Mã PIN không chính xác!');

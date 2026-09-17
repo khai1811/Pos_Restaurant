@@ -46,6 +46,13 @@ export default function TablesPage() {
     const [splitTransfer, setSplitTransfer] = useState<number>(0);
 
     const fetchTablesAndOrders = useCallback(async (isBackground = false) => {
+        // Kiểm tra token để tránh spam lỗi 401 khi chưa đăng nhập
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+
         if (!isBackground) setLoading(true);
         try {
             const tablesRes: any = await tableApi.getAll().catch(() => ({ data: [] }));
@@ -654,6 +661,74 @@ export default function TablesPage() {
                                 <CheckCircle size={18} /> HOÀN TẤT THU TIỀN
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* GIAO DIỆN IN LẠI BILL / TẠM TÍNH (Chỉ hiện khi máy in chạy) */}
+            {activeOrder && selectedTable && (
+                <div className="hidden print:block print-receipt">
+                    <div className="text-center mb-4">
+                        <h2 className="text-[18px] font-black uppercase mb-1">NHÀ HÀNG GOURMET</h2>
+                        <p className="text-[11px] mb-1">Khu Di Sản Thiên Nhiên, Nha Trang</p>
+                        <h3 className="text-[16px] font-black uppercase mt-2">PHIẾU TẠM TÍNH</h3>
+                    </div>
+
+                    <div className="text-[12px] mb-2 leading-tight space-y-1">
+                        <p><strong>Bàn:</strong> {(selectedTable as any).name || (selectedTable as any).tableNumber}</p>
+                        <p><strong>Mã đơn:</strong> #{String(activeOrder.id || (activeOrder as any)._id || '').slice(-6).toUpperCase()}</p>
+                        <p><strong>Giờ in:</strong> {new Date().toLocaleString('vi-VN')}</p>
+                    </div>
+
+                    <div className="dashed-line"></div>
+
+                    <table className="w-full text-[12px] text-left mt-2">
+                        <thead>
+                            <tr>
+                                <th className="pb-1">Món</th>
+                                <th className="pb-1 text-center">SL</th>
+                                <th className="pb-1 text-right">TT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {((activeOrder as any).items || (activeOrder as any).orderItems || []).map((item: any, idx: number) => (
+                                <tr key={idx}>
+                                    <td className="py-1 pr-1 max-w-[120px]">{item.name || item.menuItem?.name || item.menuItemName}</td>
+                                    <td className="py-1 text-center">{item.quantity}</td>
+                                    <td className="py-1 text-right">{(item.price * item.quantity).toLocaleString('vi-VN')}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    <div className="dashed-line mt-2"></div>
+
+                    <div className="space-y-1 text-[12px] my-2">
+                        <div className="flex justify-between">
+                            <span>Tạm tính:</span>
+                            <span>{subtotal.toLocaleString('vi-VN')} đ</span>
+                        </div>
+                        {discountAmount > 0 && (
+                            <div className="flex justify-between">
+                                <span>Giảm giá:</span>
+                                <span>-{discountAmount.toLocaleString('vi-VN')} đ</span>
+                            </div>
+                        )}
+                        {vatAmount > 0 && (
+                            <div className="flex justify-between">
+                                <span>VAT (8%):</span>
+                                <span>+{vatAmount.toLocaleString('vi-VN')} đ</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between mt-1 pt-1 border-t border-dashed border-black">
+                            <span className="font-bold text-[14px]">TỔNG CỘNG:</span>
+                            <span className="font-bold text-[14px]">{finalTotal.toLocaleString('vi-VN')} đ</span>
+                        </div>
+                    </div>
+
+                    <div className="dashed-line mt-2"></div>
+                    <div className="text-center mt-3 text-[11px] leading-tight font-bold italic">
+                        <p>Cảm ơn quý khách & Hẹn gặp lại!</p>
                     </div>
                 </div>
             )}

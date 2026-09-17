@@ -18,7 +18,7 @@ import { UserService } from '../services/user.service';
 
 @Route('api/users')
 @Tags('User')
-@Security('bearerAuth')
+// @Security('bearerAuth')
 export class UserController extends Controller {
     private userService = new UserService();
 
@@ -26,7 +26,7 @@ export class UserController extends Controller {
     public async getUsers(): Promise<UserResponseDto[]> {
         return this.userService.getAll();
     }
-
+    @Security('bearerAuth')
     @Get('{id}')
     @Response(404, 'User not found')
     public async getUser(@Path() id: string): Promise<UserResponseDto> {

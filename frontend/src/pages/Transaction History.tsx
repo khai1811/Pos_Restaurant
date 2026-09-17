@@ -35,7 +35,33 @@ export default function TransactionHistoryPage() {
     const fetchOrders = useCallback(async (isBackground = false) => {
         if (!isBackground) setLoading(true);
         setIsRefreshing(true);
-        try { const res = await axiosClient.get('/orders'); setOrders(res.data || []); }
+        try {
+            // Lấy song song dữ liệu Hóa đơn và Thanh toán
+            const [ordersRes, paymentsRes] = await Promise.all([
+                axiosClient.get('/orders').catch(() => ({ data: [] })),
+                axiosClient.get('/payments').catch(() => ({ data: [] }))
+            ]);
+
+            const rawOrders = Array.isArray(ordersRes.data) ? ordersRes.data : (ordersRes.data?.data || []);
+            const rawPayments = Array.isArray(paymentsRes.data) ? paymentsRes.data : (paymentsRes.data?.data || []);
+
+            const paymentMap: Record<string, any> = {};
+            rawPayments.forEach((p: any) => {
+                if (p.orderId) paymentMap[p.orderId] = p;
+            });
+
+            const mergedOrders = rawOrders.map((o: any) => {
+                const p = paymentMap[o.id];
+                return {
+                    ...o,
+                    // ƯU TIÊN LẤY TỔNG TIỀN TỪ PAYMENT (đã trừ VAT/Chiết khấu)
+                    totalAmount: p ? Number(p.totalAmount) : Number(o.totalAmount || 0),
+                    paymentMethod: p?.method || o.paymentMethod || 'CASH'
+                };
+            });
+
+            setOrders(mergedOrders);
+        }
         catch (error) { console.error('Lỗi tải lịch sử giao dịch:', error); }
         finally { setLoading(false); setIsRefreshing(false); }
     }, []);
@@ -307,6 +333,27 @@ export default function TransactionHistoryPage() {
                                             <span className="font-bold text-slate-900 dark:text-white">{((item.price || item.menuItem?.price || 0) * item.quantity).toLocaleString('vi-VN')} đ</span>
                                         </div>
                                     ))}
+
+                                    {/* TÍNH TOÁN HIỂN THỊ CHÊNH LỆCH CHIẾT KHẤU / VAT */}
+                                    {(() => {
+                                        const itemsTotal = selectedOrder.orderItems?.reduce((sum, item) => sum + ((item.price || item.menuItem?.price || 0) * item.quantity), 0) || 0;
+                                        const finalAmount = Number(selectedOrder.totalAmount);
+                                        const diff = itemsTotal - finalAmount;
+
+                                        if (Math.abs(diff) > 0) {
+                                            return (
+                                                <div className="flex justify-between text-[14px] border-t border-dashed border-slate-200 dark:border-slate-600 pt-3 mt-2">
+                                                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                                        {diff > 0 ? 'Chiết khấu / Giảm giá' : 'Thuế VAT / Phụ thu'}
+                                                    </span>
+                                                    <span className={`font-bold ${diff > 0 ? 'text-rose-500' : 'text-[#1890ff] dark:text-[#3ba0ff]'}`}>
+                                                        {diff > 0 ? '-' : '+'}{Math.abs(diff).toLocaleString('vi-VN')} đ
+                                                    </span>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
                             </div>
 
@@ -359,6 +406,82 @@ export default function TransactionHistoryPage() {
                                 <AlertCircle size={18} /> Xác Nhận Hoàn Tiền
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* GIAO DIỆN IN LẠI BILL TỪ LỊCH SỬ (Chỉ hiện khi máy in chạy) */}
+            {selectedOrder && (
+                <div className="hidden print:block print-receipt">
+                    <div className="text-center mb-4">
+                        <h2 className="text-[18px] font-black uppercase mb-1">NHÀ HÀNG GOURMET</h2>
+                        <p className="text-[11px] mb-1">Khu Di Sản Thiên Nhiên, Nha Trang</p>
+                        <h3 className="text-[16px] font-black uppercase mt-2">HÓA ĐƠN THANH TOÁN</h3>
+                    </div>
+
+                    <div className="text-[12px] mb-2 leading-tight space-y-1">
+                        <p><strong>Bàn:</strong> {selectedOrder.table?.tableNumber || 'Mang về'}</p>
+                        <p><strong>Mã đơn:</strong> #{selectedOrder.id.slice(-6).toUpperCase()}</p>
+                        <p><strong>Giờ thanh toán:</strong> {new Date(selectedOrder.createdAt).toLocaleString('vi-VN')}</p>
+                        <p><strong>Thu ngân:</strong> {selectedOrder.staff?.fullName || selectedOrder.staff?.username || '—'}</p>
+                        <p><strong>Hình thức:</strong> {selectedOrder.paymentMethod || 'CASH'}</p>
+                    </div>
+
+                    <div className="dashed-line"></div>
+
+                    <table className="w-full text-[12px] text-left mt-2">
+                        <thead>
+                            <tr>
+                                <th className="pb-1">Món</th>
+                                <th className="pb-1 text-center">SL</th>
+                                <th className="pb-1 text-right">TT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {selectedOrder.orderItems?.map((item: any, idx: number) => (
+                                <tr key={idx}>
+                                    <td className="py-1 pr-1 max-w-[120px]">{item.menuItem?.name || 'Món ăn'}</td>
+                                    <td className="py-1 text-center">{item.quantity}</td>
+                                    <td className="py-1 text-right">{((item.price || item.menuItem?.price || 0) * item.quantity).toLocaleString('vi-VN')}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    <div className="dashed-line mt-2"></div>
+
+                    <div className="space-y-1 text-[12px] my-2">
+                        {(() => {
+                            const itemsTotal = selectedOrder.orderItems?.reduce((sum, item) => sum + ((item.price || item.menuItem?.price || 0) * item.quantity), 0) || 0;
+                            const finalAmount = Number(selectedOrder.totalAmount);
+                            const diff = itemsTotal - finalAmount;
+
+                            return (
+                                <>
+                                    <div className="flex justify-between">
+                                        <span>Tổng tiền món:</span>
+                                        <span>{itemsTotal.toLocaleString('vi-VN')} đ</span>
+                                    </div>
+                                    {Math.abs(diff) > 0 && (
+                                        <div className="flex justify-between">
+                                            <span>{diff > 0 ? 'Chiết khấu/Giảm:' : 'Thuế VAT/Phụ thu:'}</span>
+                                            <span className={diff > 0 ? 'text-rose-500' : ''}>
+                                                {diff > 0 ? '-' : '+'}{Math.abs(diff).toLocaleString('vi-VN')} đ
+                                            </span>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between mt-1 pt-1 border-t border-dashed border-black">
+                                        <span className="font-bold text-[14px]">TỔNG THANH TOÁN:</span>
+                                        <span className="font-bold text-[14px]">{finalAmount.toLocaleString('vi-VN')} đ</span>
+                                    </div>
+                                </>
+                            );
+                        })()}
+                    </div>
+
+                    <div className="dashed-line mt-2"></div>
+                    <div className="text-center mt-3 text-[11px] leading-tight font-bold italic">
+                        <p>Cảm ơn quý khách & Hẹn gặp lại!</p>
                     </div>
                 </div>
             )}

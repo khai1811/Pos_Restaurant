@@ -5,7 +5,7 @@ import { OrderStatus, TableStatus } from '@prisma/client';
 export class PaymentService {
     async getAll(): Promise<PaymentResponseDto[]> {
         const payments = await prisma.payment.findMany({
-            take: 100, // 🔥 Giới hạn 100 giao dịch gần nhất để chống chậm hệ thống
+            take: 100, // Giới hạn 100 giao dịch gần nhất để chống chậm hệ thống
             orderBy: { id: 'desc' },
         });
 
@@ -46,6 +46,7 @@ export class PaymentService {
         if (order.status === OrderStatus.CANCELLED) throw new Error('Không thể thanh toán đơn hàng đã bị hủy');
 
         const createdPayment: any = await prisma.$transaction(async (tx: any) => {
+            // 1. Tạo lịch sử thanh toán
             const paymentData: any = {
                 orderId: data.orderId,
                 totalAmount: data.totalAmount,
@@ -58,6 +59,7 @@ export class PaymentService {
 
             const payment = await tx.payment.create({ data: paymentData });
 
+            // 2. Cập nhật trạng thái và TỔNG TIỀN CUỐI CÙNG (đã trừ thẻ/thuế) vào hóa đơn
             await tx.order.update({
                 where: { id: data.orderId },
                 data: {
@@ -66,6 +68,7 @@ export class PaymentService {
                 },
             });
 
+            // 3. Giải phóng bàn
             if (order.tableId) {
                 await tx.restaurantTable.update({
                     where: { id: order.tableId },
