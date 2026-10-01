@@ -8,7 +8,8 @@ import type { Table, Order } from '../types';
 import { formatVND } from '../utils/formatters';
 import {
     Plus, ArrowRightLeft, ShoppingBag, X, ShoppingCart,
-    DollarSign, QrCode, CreditCard, Layers, Printer, CheckCircle, Wallet, Utensils, Lock
+    DollarSign, QrCode, CreditCard, Layers, Printer, CheckCircle, Wallet, Utensils, Lock,
+    CalendarDays, Clock, Phone, User
 } from 'lucide-react';
 
 export default function TablesPage() {
@@ -33,20 +34,25 @@ export default function TablesPage() {
 
     const [showActionModal, setShowActionModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+    // State cho Đặt Bàn (Reservation)
+    const [showReserveModal, setShowReserveModal] = useState(false);
+    const [reserveForm, setReserveForm] = useState({ customerName: '', customerPhone: '', reservationTime: '' });
+    const [isReserving, setIsReserving] = useState(false);
+
     const [selectedTable, setSelectedTable] = useState<Table | null>(null);
     const [activeOrder, setActiveOrder] = useState<Order | null>(null);
 
     const [discountType, setDiscountType] = useState<'PERCENT' | 'AMOUNT'>('PERCENT');
     const [discountValue, setDiscountValue] = useState<number>(0);
     const [vatEnabled, setVatEnabled] = useState(true);
-    const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'QR' | 'CARD' | 'MOMO' | 'SPLIT'>('CASH');
+    const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'VNPAY' | 'CARD' | 'MOMO' | 'SPLIT'>('CASH');
 
     const [cashGiven, setCashGiven] = useState<number | ''>('');
     const [splitCash, setSplitCash] = useState<number>(0);
     const [splitTransfer, setSplitTransfer] = useState<number>(0);
 
     const fetchTablesAndOrders = useCallback(async (isBackground = false) => {
-        // Kiểm tra token để tránh spam lỗi 401 khi chưa đăng nhập
         const token = localStorage.getItem('accessToken');
         if (!token) {
             setLoading(false);
@@ -69,11 +75,13 @@ export default function TablesPage() {
                     else if (typeof t.area === 'object' && t.area !== null) areaName = t.area.name || 'Sảnh chính';
                     return {
                         ...t,
-                        id: String(t.id || t._id || t.M_ID || Math.random()),
+                        id: String(t.id || t._id || t?.M_ID || Math.random()),
                         tableNumber: t.tableNumber || t.name || '?',
                         capacity: t.capacity || t.seats || 4,
                         status: String(t.status || t.STATUS || 'AVAILABLE').toUpperCase(),
-                        area: areaName
+                        area: areaName,
+                        // Ánh xạ thêm dữ liệu đặt bàn nếu có
+                        reservationInfo: t.reservationInfo || t.customerName ? { customerName: t.customerName, time: t.reservationTime, phone: t.customerPhone } : undefined
                     };
                 })
                 .filter((t: Table) => t.id !== '');
@@ -161,7 +169,12 @@ export default function TablesPage() {
         const safeId = encodeURIComponent(String(table.id).trim());
 
         if (table.status === 'AVAILABLE') {
-            navigate(`/order/${safeId}`);
+            setSelectedTable(table);
+            setShowActionModal(true);
+        } else if (table.status === 'RESERVED') {
+            // Bàn đã đặt, cho phép mở bàn (chuyển sang gọi món) hoặc hủy đặt bàn
+            setSelectedTable(table);
+            setShowActionModal(true);
         } else {
             const orderData = activeOrders[table.id];
             if (orderData) {
@@ -201,25 +214,31 @@ export default function TablesPage() {
         if (paymentMethod === 'SPLIT' && splitCash + splitTransfer !== finalTotal) return alert('Tổng tiền chia chưa khớp với hóa đơn!');
 
         try {
-            await orderApi.payOrder({
+            const paymentPayload: any = {
                 orderId: String(activeOrder.id || (activeOrder as any)._id),
-                totalAmount: finalTotal,
-                paidAmount: paymentMethod === 'CASH' ? Number(cashGiven) : finalTotal,
-                changeAmount: paymentMethod === 'CASH' ? changeAmount : 0,
-                method: paymentMethod
-            });
+                totalAmount: Number(finalTotal),
+                paidAmount: paymentMethod === 'CASH' ? Number(cashGiven) : Number(finalTotal),
+                changeAmount: paymentMethod === 'CASH' ? Number(changeAmount) : 0,
+                method: paymentMethod,
+            };
 
-            await axiosClient.put(`/orders/${activeOrder.id}/status`, { status: 'PAID' }).catch(() => { });
-            if (selectedTable.id !== 'takeaway') {
-                await axiosClient.patch(`/tables/${selectedTable.id}/status`, { status: 'AVAILABLE' })
-                    .catch(() => axiosClient.put(`/tables/${selectedTable.id}`, { status: 'AVAILABLE' }))
-                    .catch(() => { });
+            if (paymentMethod === 'SPLIT') {
+                paymentPayload.cashAmount = Number(splitCash);
+                paymentPayload.transferAmount = Number(splitTransfer);
             }
 
+            await orderApi.payOrder(paymentPayload);
+
             alert(`Thanh toán thành công ${finalTotal.toLocaleString('vi-VN')} đ!`);
-            setShowPaymentModal(false); setSelectedTable(null); setActiveOrder(null); setDiscountValue(0);
+            setShowPaymentModal(false);
+            setSelectedTable(null);
+            setActiveOrder(null);
+            setDiscountValue(0);
             fetchTablesAndOrders(false);
-        } catch (error: any) { alert(error.response?.data?.message || 'Thanh toán thất bại'); }
+        } catch (error: any) {
+            console.error('Lỗi thanh toán:', error);
+            alert(error.response?.data?.message || 'Thanh toán thất bại');
+        }
     };
 
     const handleExecuteTransfer = async () => {
@@ -252,6 +271,50 @@ export default function TablesPage() {
             alert(error.response?.data?.message || `Hệ thống lỗi khi thực hiện ${transferType === 'move' ? 'chuyển' : 'gộp'} bàn!`);
         } finally {
             setIsTransferring(false);
+        }
+    };
+
+    // Hàm xử lý Lưu thông tin Đặt Bàn
+    const handleReserveTable = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedTable) return;
+        setIsReserving(true);
+        try {
+            // Gọi API cập nhật trạng thái bàn thành RESERVED kèm thông tin khách
+            await axiosClient.patch(`/tables/${selectedTable.id}/reserve`, {
+                customerName: reserveForm.customerName,
+                customerPhone: reserveForm.customerPhone,
+                reservationTime: reserveForm.reservationTime
+            });
+            alert('Đặt bàn thành công!');
+            setShowReserveModal(false);
+            setShowActionModal(false);
+            setReserveForm({ customerName: '', customerPhone: '', reservationTime: '' });
+            fetchTablesAndOrders(false);
+        } catch (error: any) {
+            console.error('Lỗi đặt bàn:', error);
+            alert(error.response?.data?.message || 'Lỗi hệ thống khi đặt bàn!');
+        } finally {
+            setIsReserving(false);
+        }
+    };
+
+    // Hàm xử lý Hủy Đặt Bàn (Đưa bàn về AVAILABLE)
+    const handleCancelReservation = async () => {
+        if (!selectedTable) return;
+        if (!window.confirm('Bạn có chắc chắn muốn hủy đặt bàn này không?')) return;
+        try {
+            await axiosClient.put(`/tables/${selectedTable.id}`, {
+                status: 'AVAILABLE',
+                customerName: null,
+                customerPhone: null,
+                reservationTime: null
+            });
+            alert('Đã hủy thông tin đặt bàn!');
+            setShowActionModal(false);
+            fetchTablesAndOrders(false);
+        } catch (error) {
+            alert('Lỗi khi hủy đặt bàn!');
         }
     };
 
@@ -304,6 +367,9 @@ export default function TablesPage() {
                                         <button onClick={() => setStatusFilter('OCCUPIED')} className={`shrink-0 flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg border transition cursor-pointer ${statusFilter === 'OCCUPIED' ? 'bg-amber-500 text-white font-bold border-amber-500 shadow-sm' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/20'}`}>
                                             <span className="w-2 h-2 rounded-full bg-amber-500" /> Có khách ({tables.filter(t => t.status === 'OCCUPIED').length})
                                         </button>
+                                        <button onClick={() => setStatusFilter('RESERVED')} className={`shrink-0 flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg border transition cursor-pointer ${statusFilter === 'RESERVED' ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-blue-50 dark:bg-blue-500/10 text-[#1890ff] dark:text-[#3ba0ff] border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20'}`}>
+                                            <span className="w-2 h-2 rounded-full bg-[#1890ff]" /> Đặt trước ({tables.filter(t => t.status === 'RESERVED').length})
+                                        </button>
                                         <button onClick={() => setStatusFilter('BILL_REQUESTED')} className={`shrink-0 flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg border transition cursor-pointer ${statusFilter === 'BILL_REQUESTED' ? 'bg-rose-600 text-white border-rose-600 shadow-sm' : 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/20 hover:bg-rose-100 dark:hover:bg-rose-500/20'}`}>
                                             <span className="w-2 h-2 rounded-full bg-rose-500" /> Chờ TT ({tables.filter(t => t.status === 'BILL_REQUESTED').length})
                                         </button>
@@ -344,11 +410,13 @@ export default function TablesPage() {
 
                                                 const tableColor = table.status === 'OCCUPIED' ? 'bg-[#fdf6ec] dark:bg-amber-900/20 border-[#f99d1c] dark:border-amber-600/50 shadow-[0_4px_15px_rgba(249,157,28,0.15)] dark:shadow-none'
                                                     : table.status === 'BILL_REQUESTED' ? 'bg-rose-50 dark:bg-rose-900/20 border-rose-400 dark:border-rose-500/50 shadow-[0_4px_15px_rgba(244,63,94,0.15)] dark:shadow-none'
-                                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-[#1890ff] dark:hover:border-[#1890ff] hover:bg-blue-50 dark:hover:bg-slate-700 shadow-sm';
+                                                        : table.status === 'RESERVED' ? 'bg-[#f0f7ff] dark:bg-[#1890ff]/10 border-[#1890ff] dark:border-[#3ba0ff]/50 shadow-[0_4px_15px_rgba(24,144,255,0.15)] dark:shadow-none'
+                                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-[#1890ff] dark:hover:border-[#1890ff] hover:bg-blue-50 dark:hover:bg-slate-700 shadow-sm';
 
                                                 const chairColor = table.status === 'OCCUPIED' ? 'bg-[#f99d1c] dark:bg-amber-600'
                                                     : table.status === 'BILL_REQUESTED' ? 'bg-rose-400 dark:bg-rose-500 animate-pulse'
-                                                        : 'bg-slate-200 dark:bg-slate-700 group-hover:bg-[#1890ff]';
+                                                        : table.status === 'RESERVED' ? 'bg-[#1890ff] dark:bg-[#3ba0ff]'
+                                                            : 'bg-slate-200 dark:bg-slate-700 group-hover:bg-[#1890ff]';
 
                                                 return (
                                                     <div key={table.id} onClick={() => handleTableClick(table)} className="flex flex-col items-center justify-center cursor-pointer group relative pt-8 pb-2 mt-1">
@@ -380,7 +448,14 @@ export default function TablesPage() {
                                                                 <span className={`font-black text-[16px] ${table.status === 'AVAILABLE' ? 'text-slate-500 dark:text-slate-400 group-hover:text-[#1890ff] dark:group-hover:text-white' : 'text-slate-900 dark:text-white'}`}>
                                                                     Bàn {(table as any).tableNumber || (table as any).name}
                                                                 </span>
-                                                                {order ? (
+
+                                                                {/* Hiển thị logic theo trạng thái bàn */}
+                                                                {table.status === 'RESERVED' && table.reservationInfo ? (
+                                                                    <div className="flex flex-col items-center mt-1 text-center px-1">
+                                                                        <span className="text-[10px] font-black text-[#1890ff] dark:text-[#3ba0ff] truncate w-full">{table.reservationInfo.time}</span>
+                                                                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-0.5 opacity-90 truncate w-full">{table.reservationInfo.customerName}</span>
+                                                                    </div>
+                                                                ) : order ? (
                                                                     <div className="flex flex-col items-center mt-1">
                                                                         <span className={`text-[13px] font-black ${table.status === 'BILL_REQUESTED' ? 'text-rose-600 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400'}`}>
                                                                             {formatVND((order as any).totalAmount || (order as any).total || 0)}
@@ -449,7 +524,9 @@ export default function TablesPage() {
                 </main>
             </div>
 
-            {/* CÁC MODALS (Action, Transfer, Payment) */}
+            {/* CÁC MODALS */}
+
+            {/* Modal Menu Ngữ cảnh khi click vào Bàn (Sửa lại để hỗ trợ bàn trống/bàn đặt) */}
             {showActionModal && selectedTable && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/70 dark:bg-black/80 backdrop-blur-sm p-4 print:hidden">
                     <div className="bg-white dark:bg-slate-900 rounded-[24px] max-w-sm w-full p-6 shadow-2xl space-y-5 text-center animate-fade-in border border-slate-200 dark:border-slate-800">
@@ -457,26 +534,58 @@ export default function TablesPage() {
                             {selectedTable.id === 'takeaway' ? <ShoppingBag size={28} /> : ((selectedTable as any).tableNumber || (selectedTable as any).name)}
                         </div>
                         <div>
-                            <h3 className="font-bold text-[18px] text-slate-900 dark:text-white">{selectedTable.id === 'takeaway' ? (selectedTable as any).name : `Bàn ${(selectedTable as any).tableNumber || (selectedTable as any).name} đang phục vụ`}</h3>
-                            <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">Vui lòng chọn thao tác nghiệp vụ:</p>
+                            <h3 className="font-bold text-[18px] text-slate-900 dark:text-white">
+                                {selectedTable.id === 'takeaway' ? (selectedTable as any).name
+                                    : selectedTable.status === 'AVAILABLE' ? `Bàn ${(selectedTable as any).tableNumber || (selectedTable as any).name} (Đang trống)`
+                                        : selectedTable.status === 'RESERVED' ? `Bàn ${(selectedTable as any).tableNumber || (selectedTable as any).name} (Đã đặt trước)`
+                                            : `Bàn ${(selectedTable as any).tableNumber || (selectedTable as any).name} đang phục vụ`}
+                            </h3>
+                            {selectedTable.status === 'RESERVED' && selectedTable.reservationInfo && (
+                                <p className="text-[12px] font-medium text-[#1890ff] dark:text-[#3ba0ff] mt-1.5 flex flex-col items-center gap-1">
+                                    <span>Khách: {selectedTable.reservationInfo.customerName} - {selectedTable.reservationInfo.phone}</span>
+                                    <span>Giờ đến: {selectedTable.reservationInfo.time}</span>
+                                </p>
+                            )}
+                            <p className="text-[12px] text-slate-500 dark:text-slate-400 mt-2">Vui lòng chọn thao tác nghiệp vụ:</p>
                         </div>
+
                         <div className="space-y-3 pt-2">
-                            {selectedTable.id !== 'takeaway' && (
-                                <button onClick={() => { setShowActionModal(false); navigate(`/order/${encodeURIComponent(selectedTable.id)}`); }} className="w-full py-3.5 bg-blue-50 dark:bg-slate-800 hover:bg-[#1890ff] dark:hover:bg-[#1890ff] text-[#1890ff] dark:text-[#3ba0ff] hover:text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-blue-200 dark:border-slate-700">
-                                    <Utensils size={18} /> Xem / Gọi Thêm Món
+                            {/* Nút Gọi món (Hiển thị cho bàn Trống, Bàn đang có khách, Bàn Đã đặt) */}
+                            <button onClick={() => { setShowActionModal(false); navigate(`/order/${encodeURIComponent(selectedTable.id)}`); }} className="w-full py-3.5 bg-blue-50 dark:bg-slate-800 hover:bg-[#1890ff] dark:hover:bg-[#1890ff] text-[#1890ff] dark:text-[#3ba0ff] hover:text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-blue-200 dark:border-slate-700">
+                                <Utensils size={18} /> {selectedTable.status === 'AVAILABLE' || selectedTable.status === 'RESERVED' ? 'Mở Bàn & Gọi Món' : 'Xem / Gọi Thêm Món'}
+                            </button>
+
+                            {/* Nút Đặt bàn (Chỉ hiện khi bàn Trống) */}
+                            {selectedTable.status === 'AVAILABLE' && (
+                                <button onClick={() => { setShowActionModal(false); setShowReserveModal(true); }} className="w-full py-3.5 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-500 dark:hover:bg-amber-500 text-amber-600 dark:text-amber-400 hover:text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-amber-200 dark:border-amber-700/50">
+                                    <CalendarDays size={18} /> Nhận Đặt Bàn Trước
                                 </button>
                             )}
-                            <button onClick={handlePrintBill} className="w-full py-3.5 bg-emerald-50 dark:bg-slate-800 hover:bg-emerald-500 dark:hover:bg-emerald-500 text-emerald-600 dark:text-emerald-400 hover:text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-emerald-200 dark:border-slate-700">
-                                <Printer size={18} /> In Phiếu Tạm Tính
-                            </button>
-                            {canCheckout ? (
-                                <button onClick={() => { setShowActionModal(false); setShowPaymentModal(true); }} className="w-full py-3.5 bg-[#1890ff] hover:bg-blue-600 text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-[#1890ff] dark:border-transparent">
-                                    <ShoppingCart size={18} /> Thanh Toán Hóa Đơn
+
+                            {/* Nút Hủy đặt bàn (Chỉ hiện khi bàn Đã Đặt) */}
+                            {selectedTable.status === 'RESERVED' && (
+                                <button onClick={handleCancelReservation} className="w-full py-3.5 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500 dark:hover:bg-rose-500 text-rose-600 dark:text-rose-400 hover:text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-rose-200 dark:border-rose-700/50">
+                                    <X size={18} /> Hủy Lịch Đặt Bàn
                                 </button>
-                            ) : (
-                                <div className="w-full py-3.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700">
-                                    <Lock size={16} /> Phục vụ không có quyền thu tiền
-                                </div>
+                            )}
+
+                            {/* Các nút thanh toán/in bill (Chỉ hiện khi bàn đang có khách hoặc chờ TT) */}
+                            {(selectedTable.status === 'OCCUPIED' || selectedTable.status === 'BILL_REQUESTED') && selectedTable.id !== 'takeaway' && (
+                                <button onClick={handlePrintBill} className="w-full py-3.5 bg-emerald-50 dark:bg-slate-800 hover:bg-emerald-500 dark:hover:bg-emerald-500 text-emerald-600 dark:text-emerald-400 hover:text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-emerald-200 dark:border-slate-700">
+                                    <Printer size={18} /> In Phiếu Tạm Tính
+                                </button>
+                            )}
+
+                            {(selectedTable.status === 'OCCUPIED' || selectedTable.status === 'BILL_REQUESTED') && (
+                                canCheckout ? (
+                                    <button onClick={() => { setShowActionModal(false); setShowPaymentModal(true); }} className="w-full py-3.5 bg-[#1890ff] hover:bg-blue-600 text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-[#1890ff] dark:border-transparent">
+                                        <ShoppingCart size={18} /> Thanh Toán Hóa Đơn
+                                    </button>
+                                ) : (
+                                    <div className="w-full py-3.5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700">
+                                        <Lock size={16} /> Phục vụ không có quyền thu tiền
+                                    </div>
+                                )
                             )}
                         </div>
                         <button onClick={() => setShowActionModal(false)} className="w-full py-3.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-xl text-[13px] transition cursor-pointer border border-slate-200 dark:border-slate-700">Đóng</button>
@@ -484,6 +593,44 @@ export default function TablesPage() {
                 </div>
             )}
 
+            {/* Modal Nhập Thông Tin Đặt Bàn */}
+            {showReserveModal && selectedTable && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/70 dark:bg-black/80 backdrop-blur-sm p-4 print:hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-[24px] max-w-sm w-full p-6 shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-800">
+                        <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+                            <h3 className="font-bold text-[18px] text-slate-800 dark:text-white flex items-center gap-2">
+                                <CalendarDays className="text-[#1890ff]" size={20} />
+                                Đặt Bàn {(selectedTable as any).tableNumber || (selectedTable as any).name}
+                            </h3>
+                            <button onClick={() => setShowReserveModal(false)} className="text-slate-400 hover:text-rose-500 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-full cursor-pointer"><X size={18} /></button>
+                        </div>
+
+                        <form onSubmit={handleReserveTable} className="space-y-4">
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><User size={14} /> Tên Khách Hàng *</label>
+                                <input required type="text" value={reserveForm.customerName} onChange={e => setReserveForm({ ...reserveForm, customerName: e.target.value })} placeholder="Nguyễn Văn A..." className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:border-[#1890ff] focus:ring-1 focus:ring-[#1890ff] outline-none font-medium text-slate-900 dark:text-white text-[14px]" />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><Phone size={14} /> Số Điện Thoại *</label>
+                                <input required type="tel" value={reserveForm.customerPhone} onChange={e => setReserveForm({ ...reserveForm, customerPhone: e.target.value })} placeholder="0901234567" className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:border-[#1890ff] focus:ring-1 focus:ring-[#1890ff] outline-none font-medium text-slate-900 dark:text-white text-[14px]" />
+                            </div>
+                            <div>
+                                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5"><Clock size={14} /> Giờ Khách Đến *</label>
+                                <input required type="time" value={reserveForm.reservationTime} onChange={e => setReserveForm({ ...reserveForm, reservationTime: e.target.value })} className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl focus:border-[#1890ff] focus:ring-1 focus:ring-[#1890ff] outline-none font-medium text-slate-900 dark:text-white text-[14px] cursor-pointer" />
+                            </div>
+
+                            <div className="flex gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 mt-5">
+                                <button type="button" onClick={() => setShowReserveModal(false)} className="w-1/3 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer text-[13px]">Hủy</button>
+                                <button type="submit" disabled={isReserving} className="w-2/3 py-3.5 bg-[#1890ff] hover:bg-blue-600 text-white font-bold rounded-xl shadow-sm flex items-center justify-center gap-2 cursor-pointer text-[13px] uppercase tracking-wide">
+                                    {isReserving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <CheckCircle size={18} />} Xác Nhận
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Chuyển/Gộp Bàn */}
             {showTransferModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 dark:bg-black/80 backdrop-blur-sm p-4 print:hidden">
                     <div className="bg-white dark:bg-slate-900 rounded-[24px] max-w-md w-full p-6 shadow-2xl animate-fade-in border border-slate-200 dark:border-slate-800">
@@ -571,7 +718,7 @@ export default function TablesPage() {
                                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2.5">
                                     {[
                                         { id: 'CASH', label: 'Tiền mặt', icon: DollarSign },
-                                        { id: 'QR', label: 'VietQR', icon: QrCode },
+                                        { id: 'VNPAY', label: 'VietQR', icon: QrCode },
                                         { id: 'CARD', label: 'Thẻ POS', icon: CreditCard },
                                         { id: 'MOMO', label: 'Ví MoMo', icon: Wallet },
                                         { id: 'SPLIT', label: 'Tách kênh', icon: Layers },
@@ -630,11 +777,10 @@ export default function TablesPage() {
                                     </div>
                                 )}
 
-                                {(paymentMethod === 'QR' || paymentMethod === 'MOMO') && (
+                                {(paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') && (
                                     <div className="flex flex-col sm:flex-row items-center justify-center bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 gap-5 sm:gap-6 shadow-sm">
                                         <div className="w-36 h-36 sm:w-44 sm:h-44 bg-white border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl flex items-center justify-center p-2">
-                                            <img src={`https://img.vietqr.io/image/970422-0123456789-compact.png?amount=${finalTotal}&addInfo=${encodeURIComponent('ThanhToan_' + ((selectedTable as any).tableNumber || 'Ban'))}`} alt="VietQR" className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal" />
-                                        </div>
+                                            <img src={`https://img.vietqr.io/image/970436-1026910348-compact.png?amount=${finalTotal}&addInfo=${encodeURIComponent('ThanhToan_' + ((selectedTable as any).tableNumber || 'Ban'))}`} alt="VietQR" className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal" />                                        </div>
                                         <div className="space-y-1 text-center sm:text-left">
                                             <p className="text-[15px] font-black text-slate-800 dark:text-white">Quét mã {paymentMethod === 'MOMO' ? 'MoMo' : 'VietQR'}</p>
                                             <p className="text-[12px] text-slate-500 dark:text-slate-400 font-medium">Mở ứng dụng Ngân hàng để quét.</p>
@@ -665,7 +811,7 @@ export default function TablesPage() {
                 </div>
             )}
 
-            {/* GIAO DIỆN IN LẠI BILL / TẠM TÍNH (Chỉ hiện khi máy in chạy) */}
+            {/* GIAO DIỆN IN LẠI BILL / TẠM TÍNH */}
             {activeOrder && selectedTable && (
                 <div className="hidden print:block print-receipt">
                     <div className="text-center mb-4">

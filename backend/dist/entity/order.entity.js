@@ -11,6 +11,7 @@ class OrderEntity {
     constructor(partial) {
         Object.assign(this, partial);
         this.items = partial.items || []; // Khởi tạo mảng rỗng nếu undefined
+        this.guestCount = partial.guestCount || 1;
     }
 }
 exports.OrderEntity = OrderEntity;

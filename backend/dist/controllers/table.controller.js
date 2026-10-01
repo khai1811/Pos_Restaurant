@@ -32,7 +32,8 @@ let RestaurantTableController = class RestaurantTableController extends tsoa_1.C
         }
         return table;
     }
-    async createTable(requestBody) {
+    async createTable(requestBody // 🔥 Ép nhận mọi dữ liệu, bỏ qua bộ lọc TSOA
+    ) {
         try {
             this.setStatus(201);
             return await this.tableService.create(requestBody);
@@ -42,7 +43,21 @@ let RestaurantTableController = class RestaurantTableController extends tsoa_1.C
             throw new Error(error.message);
         }
     }
-    async updateTable(id, requestBody) {
+    // === API CHUYỂN / GỘP BÀN ===
+    async transferTable(requestBody // 🔥 Ép nhận mọi dữ liệu
+    ) {
+        try {
+            const success = await this.tableService.transferTable(requestBody.sourceTableId, requestBody.targetTableId, requestBody.actionType);
+            return { success };
+        }
+        catch (error) {
+            this.setStatus(400);
+            throw new Error(error.message);
+        }
+    }
+    // ====================================
+    async updateTable(id, requestBody // 🔥 Ép nhận mọi dữ liệu, bỏ qua bộ lọc TSOA
+    ) {
         try {
             return await this.tableService.update(id, requestBody);
         }
@@ -55,6 +70,16 @@ let RestaurantTableController = class RestaurantTableController extends tsoa_1.C
         try {
             const success = await this.tableService.delete(id);
             return { success };
+        }
+        catch (error) {
+            this.setStatus(400);
+            throw new Error(error.message);
+        }
+    }
+    // === API ĐẶT BÀN TRƯỚC ===
+    async reserveTable(id, requestBody) {
+        try {
+            return await this.tableService.reserveTable(id, requestBody);
         }
         catch (error) {
             this.setStatus(400);
@@ -88,6 +113,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], RestaurantTableController.prototype, "createTable", null);
 __decorate([
+    (0, tsoa_1.Post)('transfer'),
+    (0, tsoa_1.Response)(400, 'Bad Request'),
+    __param(0, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], RestaurantTableController.prototype, "transferTable", null);
+__decorate([
     (0, tsoa_1.Put)('{id}'),
     (0, tsoa_1.Response)(400, 'Bad Request'),
     (0, tsoa_1.Response)(404, 'Table not found'),
@@ -105,6 +138,16 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], RestaurantTableController.prototype, "deleteTable", null);
+__decorate([
+    (0, tsoa_1.Patch)('{id}/reserve'),
+    (0, tsoa_1.Response)(400, 'Bad Request'),
+    (0, tsoa_1.Response)(404, 'Table not found'),
+    __param(0, (0, tsoa_1.Path)()),
+    __param(1, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], RestaurantTableController.prototype, "reserveTable", null);
 exports.RestaurantTableController = RestaurantTableController = __decorate([
     (0, tsoa_1.Route)('api/tables'),
     (0, tsoa_1.Tags)('Restaurant Table'),

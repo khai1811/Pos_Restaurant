@@ -113,4 +113,18 @@ export class OrderController extends Controller {
             throw new Error(error.message);
         }
     }
+    @Patch('{id}/guest-count')
+    @SuccessResponse(200, 'OK')
+    @Response(400, 'Bad Request')
+    public async updateGuestCount(
+        @Path() id: string,
+        @Body() requestBody: { guestCount: number }
+    ): Promise<OrderResponseDto> {
+        try {
+            return await this.orderService.updateGuestCount(id, requestBody.guestCount);
+        } catch (error: any) {
+            this.setStatus(400);
+            throw new Error(error.message);
+        }
+    }
 }

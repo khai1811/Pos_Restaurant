@@ -8,7 +8,9 @@ import {
     Trash2,
     ShieldAlert,
     Mail,
-    X
+    X,
+    Lock,
+    Unlock
 } from 'lucide-react';
 import { sound } from '../utils/formatters';
 import type { User } from '../types';
@@ -25,7 +27,7 @@ export interface PosUser extends User {
     pin?: string;
     phone?: string;
     avatar?: string;
-    active?: boolean;
+    isActive?: boolean;
     permissions?: StaffPermissions;
 }
 
@@ -35,6 +37,7 @@ interface StaffManagementProps {
     onUpdateStaff: (user: PosUser) => void;
     onAddStaff: (user: PosUser) => void;
     onDeleteStaff: (userId: string) => void;
+    onToggleStatus: (userId: string, currentStatus: boolean) => void; // 🔥 Nhận hàm khóa/mở từ cha
 }
 
 export const StaffManagement: React.FC<StaffManagementProps> = ({
@@ -43,6 +46,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     onUpdateStaff,
     onAddStaff,
     onDeleteStaff,
+    onToggleStatus
 }) => {
     const [editingStaff, setEditingStaff] = useState<PosUser | null>(null);
     const [isCreating, setIsCreating] = useState(false);
@@ -55,7 +59,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
         role: 'STAFF',
         phone: '',
         avatar: '',
-        active: true,
+        isActive: true,
         permissions: {
             canDiscount: false,
             canRefund: false,
@@ -76,6 +80,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
             phone: staff.phone || '',
             pin: staff.pin || '',
             avatar: staff.avatar || '',
+            isActive: staff.isActive ?? true,
             permissions: staff.permissions || {
                 canDiscount: false,
                 canRefund: false,
@@ -98,7 +103,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
             role: 'STAFF',
             phone: '',
             avatar: '',
-            active: true,
+            isActive: true,
             permissions: {
                 canDiscount: false,
                 canRefund: false,
@@ -149,7 +154,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                 pin: formData.pin || '0000',
                 phone: formData.phone || '',
                 avatar: formData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.fullName || 'NV')}&background=f97316&color=fff`,
-                active: formData.active ?? true,
+                isActive: formData.isActive ?? true,
                 permissions: formData.permissions,
             };
             onAddStaff(newUser);
@@ -199,82 +204,106 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
 
             {/* Staff Grid */}
             <div className="grid grid-cols-4 gap-4">
-                {staffList.map((st) => (
-                    <div
-                        key={st.id}
-                        className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between hover:border-[#ff7f3f] dark:hover:border-[#ff7f3f] hover:shadow-[0_4px_15px_rgba(255,127,63,0.1)] transition-all duration-300"
-                    >
-                        <div>
-                            <div className="flex items-start justify-between">
-                                <img
-                                    src={st.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(st.fullName)}&background=f97316&color=fff`}
-                                    alt={st.fullName}
-                                    className="w-14 h-14 rounded-full object-cover border-2 border-slate-100 dark:border-slate-700 shadow-sm"
-                                />
-                                {getRoleBadge(st.role)}
-                            </div>
+                {staffList.map((st) => {
+                    const status = st.isActive ?? true;
+                    return (
+                        <div
+                            key={st.id}
+                            className={`relative bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 flex flex-col justify-between transition-all duration-300 ${!status ? 'opacity-70 grayscale-[50%]' : 'hover:border-[#ff7f3f] dark:hover:border-[#ff7f3f] hover:shadow-[0_4px_15px_rgba(255,127,63,0.1)]'}`}
+                        >
+                            {!status && (
+                                <div className="absolute -top-3 -right-3 z-10 bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg border border-slate-600 flex items-center gap-1 -rotate-12">
+                                    <Lock size={10} /> ĐÃ KHÓA
+                                </div>
+                            )}
 
-                            <div className="mt-4">
-                                <h3 className="font-bold text-[15px] text-slate-800 dark:text-white leading-tight">{st.fullName}</h3>
-                                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">@{st.username}</p>
+                            <div>
+                                <div className="flex items-start justify-between">
+                                    <img
+                                        src={st.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(st.fullName)}&background=f97316&color=fff`}
+                                        alt={st.fullName}
+                                        className="w-14 h-14 rounded-full object-cover border-2 border-slate-100 dark:border-slate-700 shadow-sm"
+                                    />
+                                    <div className="flex flex-col items-end gap-1.5">
+                                        {getRoleBadge(st.role)}
+                                        {/* Nút Toggle trạng thái */}
+                                        {currentUser?.role === 'ADMIN' && st.id !== currentUser?.id && (
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm(`Bạn muốn ${status ? 'KHÓA' : 'MỞ KHÓA'} tài khoản này?`)) {
+                                                        onToggleStatus(st.id, status);
+                                                    }
+                                                }}
+                                                className={`text-[9px] font-bold px-2 py-0.5 rounded cursor-pointer border ${status ? 'bg-slate-50 text-slate-500 hover:bg-rose-50 hover:text-rose-600 border-slate-200' : 'bg-slate-800 text-white hover:bg-emerald-600 border-slate-700'}`}
+                                            >
+                                                {status ? 'Khóa TK' : 'Mở khóa'}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
 
-                                <div className="space-y-2 mt-3">
-                                    <p className="text-[12px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-                                        {st.email || 'Chưa cập nhật'}
-                                    </p>
-                                    <p className="text-[12px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-                                        {st.phone || 'Chưa cập nhật SĐT'}
-                                    </p>
-                                    <p className="text-[12px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                        <Key className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-                                        Mã PIN POS: <strong className="font-mono text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 rounded tracking-widest">{st.pin || '****'}</strong>
-                                    </p>
+                                <div className="mt-4">
+                                    <h3 className="font-bold text-[15px] text-slate-800 dark:text-white leading-tight">{st.fullName}</h3>
+                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">@{st.username}</p>
+
+                                    <div className="space-y-2 mt-3">
+                                        <p className="text-[12px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                            <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                                            {st.email || 'Chưa cập nhật'}
+                                        </p>
+                                        <p className="text-[12px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                            <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                                            {st.phone || 'Chưa cập nhật SĐT'}
+                                        </p>
+                                        <p className="text-[12px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                            <Key className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                                            Mã PIN POS: <strong className="font-mono text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 rounded tracking-widest">{st.pin || '****'}</strong>
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-medium space-y-1.5 transition-colors">
+                                    <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                                        <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Chiết khấu:</span>
+                                        <span className={st.permissions?.canDiscount ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-300 dark:text-slate-600"}>{st.permissions?.canDiscount ? 'Được phép' : 'Không'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                                        <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Hoàn tiền:</span>
+                                        <span className={st.permissions?.canRefund ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-300 dark:text-slate-600"}>{st.permissions?.canRefund ? 'Được phép' : 'Không'}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
+                                        <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Báo cáo:</span>
+                                        <span className={st.permissions?.canViewReports ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-300 dark:text-slate-600"}>{st.permissions?.canViewReports ? 'Được phép' : 'Không'}</span>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-medium space-y-1.5 transition-colors">
-                                <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
-                                    <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Chiết khấu:</span>
-                                    <span className={st.permissions?.canDiscount ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-300 dark:text-slate-600"}>{st.permissions?.canDiscount ? 'Được phép' : 'Không'}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
-                                    <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Hoàn tiền:</span>
-                                    <span className={st.permissions?.canRefund ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-300 dark:text-slate-600"}>{st.permissions?.canRefund ? 'Được phép' : 'Không'}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-slate-500 dark:text-slate-400">
-                                    <span className="flex items-center gap-1.5"><ShieldAlert size={12} /> Báo cáo:</span>
-                                    <span className={st.permissions?.canViewReports ? "text-emerald-600 dark:text-emerald-400 font-bold" : "text-slate-300 dark:text-slate-600"}>{st.permissions?.canViewReports ? 'Được phép' : 'Không'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {currentUser?.role === 'ADMIN' && (
-                            <div className="flex gap-2 pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
-                                <button
-                                    onClick={() => handleOpenEdit(st)}
-                                    className="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-[13px] font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                                >
-                                    <Edit2 className="w-3.5 h-3.5" /> Chỉnh sửa
-                                </button>
-                                {st.id !== currentUser?.id && (
+                            {currentUser?.role === 'ADMIN' && (
+                                <div className="flex gap-2 pt-4 mt-4 border-t border-slate-100 dark:border-slate-800">
                                     <button
-                                        onClick={() => {
-                                            if (window.confirm(`Xác nhận xóa nhân viên "${st.fullName}"?`)) {
-                                                onDeleteStaff(st.id);
-                                            }
-                                        }}
-                                        className="py-2 px-3 rounded-lg border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
-                                        title="Xóa nhân viên"
+                                        onClick={() => handleOpenEdit(st)}
+                                        className="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-[13px] font-bold text-slate-600 dark:text-slate-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Edit2 className="w-3.5 h-3.5" /> Chỉnh sửa
                                     </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                ))}
+                                    {st.id !== currentUser?.id && (
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm(`Xác nhận xóa nhân viên "${st.fullName}" khỏi hệ thống vĩnh viễn?`)) {
+                                                    onDeleteStaff(st.id);
+                                                }
+                                            }}
+                                            className="py-2 px-3 rounded-lg border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 transition-colors cursor-pointer"
+                                            title="Xóa nhân viên"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Modal Thêm/Sửa */}

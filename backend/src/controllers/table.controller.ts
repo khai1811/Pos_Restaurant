@@ -12,6 +12,7 @@ import {
     SuccessResponse,
     Response,
     Security,
+    Patch,
 } from 'tsoa';
 import { TableStatus } from '@prisma/client';
 import { RestaurantTableService } from '../services/table.service';
@@ -96,6 +97,21 @@ export class RestaurantTableController extends Controller {
         try {
             const success = await this.tableService.delete(id);
             return { success };
+        } catch (error: any) {
+            this.setStatus(400);
+            throw new Error(error.message);
+        }
+    }
+    // === API ĐẶT BÀN TRƯỚC ===
+    @Patch('{id}/reserve')
+    @Response(400, 'Bad Request')
+    @Response(404, 'Table not found')
+    public async reserveTable(
+        @Path() id: string,
+        @Body() requestBody: any
+    ): Promise<any> {
+        try {
+            return await this.tableService.reserveTable(id, requestBody);
         } catch (error: any) {
             this.setStatus(400);
             throw new Error(error.message);

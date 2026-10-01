@@ -43,6 +43,10 @@ const models = {
             "fullName": { "dataType": "string", "required": true },
             "role": { "ref": "UserRole", "required": true },
             "isActive": { "dataType": "boolean", "required": true },
+            "phone": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "pin": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "avatar": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "permissions": { "dataType": "union", "subSchemas": [{ "dataType": "any" }, { "dataType": "enum", "enums": [null] }], "required": true },
             "createdAt": { "dataType": "datetime", "required": true },
             "updatedAt": { "dataType": "datetime", "required": true },
         },
@@ -58,6 +62,10 @@ const models = {
             "fullName": { "dataType": "string", "required": true },
             "role": { "ref": "UserRole" },
             "isActive": { "dataType": "boolean" },
+            "phone": { "dataType": "string" },
+            "pin": { "dataType": "string" },
+            "avatar": { "dataType": "string" },
+            "permissions": { "dataType": "any" },
         },
         "additionalProperties": false,
     },
@@ -71,51 +79,22 @@ const models = {
             "fullName": { "dataType": "string" },
             "role": { "ref": "UserRole" },
             "isActive": { "dataType": "boolean" },
+            "phone": { "dataType": "string" },
+            "pin": { "dataType": "string" },
+            "avatar": { "dataType": "string" },
+            "permissions": { "dataType": "any" },
         },
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "_36_Enums.TableStatus": {
         "dataType": "refAlias",
-        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["AVAILABLE"] }, { "dataType": "enum", "enums": ["OCCUPIED"] }, { "dataType": "enum", "enums": ["RESERVED"] }, { "dataType": "enum", "enums": ["CLEANING"] }], "validators": {} },
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["AVAILABLE"] }, { "dataType": "enum", "enums": ["OCCUPIED"] }, { "dataType": "enum", "enums": ["RESERVED"] }, { "dataType": "enum", "enums": ["CLEANING"] }, { "dataType": "enum", "enums": ["BILL_REQUESTED"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "TableStatus": {
         "dataType": "refAlias",
         "type": { "ref": "_36_Enums.TableStatus", "validators": {} },
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "TableResponseDto": {
-        "dataType": "refObject",
-        "properties": {
-            "id": { "dataType": "string", "required": true },
-            "tableNumber": { "dataType": "double", "required": true },
-            "capacity": { "dataType": "double", "required": true },
-            "status": { "ref": "TableStatus", "required": true },
-            "createdAt": { "dataType": "datetime", "required": true },
-            "updatedAt": { "dataType": "datetime", "required": true },
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateTableDto": {
-        "dataType": "refObject",
-        "properties": {
-            "tableNumber": { "dataType": "double", "required": true },
-            "capacity": { "dataType": "double" },
-            "status": { "ref": "TableStatus" },
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "UpdateTableDto": {
-        "dataType": "refObject",
-        "properties": {
-            "tableNumber": { "dataType": "double" },
-            "capacity": { "dataType": "double" },
-            "status": { "ref": "TableStatus" },
-        },
-        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "RevenueByDateDto": {
@@ -142,7 +121,7 @@ const models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "_36_Enums.PaymentMethod": {
         "dataType": "refAlias",
-        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["CASH"] }, { "dataType": "enum", "enums": ["CARD"] }, { "dataType": "enum", "enums": ["MOMO"] }, { "dataType": "enum", "enums": ["VNPAY"] }, { "dataType": "enum", "enums": ["STRIPE"] }], "validators": {} },
+        "type": { "dataType": "union", "subSchemas": [{ "dataType": "enum", "enums": ["CASH"] }, { "dataType": "enum", "enums": ["CARD"] }, { "dataType": "enum", "enums": ["MOMO"] }, { "dataType": "enum", "enums": ["VNPAY"] }, { "dataType": "enum", "enums": ["STRIPE"] }, { "dataType": "enum", "enums": ["SPLIT"] }], "validators": {} },
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "PaymentMethod": {
@@ -211,6 +190,7 @@ const models = {
             "status": { "ref": "OrderStatus", "required": true },
             "totalAmount": { "dataType": "double", "required": true },
             "note": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
+            "guestCount": { "dataType": "double" },
             "items": { "dataType": "array", "array": { "dataType": "refObject", "ref": "OrderItemResponseDto" }, "required": true },
             "createdAt": { "dataType": "datetime", "required": true },
             "updatedAt": { "dataType": "datetime", "required": true },
@@ -234,6 +214,7 @@ const models = {
             "tableId": { "dataType": "string", "required": true },
             "userId": { "dataType": "string", "required": true },
             "note": { "dataType": "string" },
+            "guestCount": { "dataType": "double" },
             "items": { "dataType": "array", "array": { "dataType": "refObject", "ref": "CreateOrderItemDto" }, "required": true },
         },
         "additionalProperties": false,
@@ -256,6 +237,7 @@ const models = {
             "price": { "dataType": "double", "required": true },
             "imageUrl": { "dataType": "union", "subSchemas": [{ "dataType": "string" }, { "dataType": "enum", "enums": [null] }], "required": true },
             "isAvailable": { "dataType": "boolean", "required": true },
+            "popular": { "dataType": "boolean" },
             "categoryId": { "dataType": "string", "required": true },
             "categoryName": { "dataType": "string" },
             "createdAt": { "dataType": "datetime", "required": true },
@@ -270,8 +252,10 @@ const models = {
             "name": { "dataType": "string", "required": true },
             "description": { "dataType": "string" },
             "price": { "dataType": "double", "required": true },
+            "image": { "dataType": "string" },
             "imageUrl": { "dataType": "string" },
             "isAvailable": { "dataType": "boolean" },
+            "popular": { "dataType": "boolean" },
             "categoryId": { "dataType": "string", "required": true },
         },
         "additionalProperties": false,
@@ -283,8 +267,10 @@ const models = {
             "name": { "dataType": "string" },
             "description": { "dataType": "string" },
             "price": { "dataType": "double" },
+            "image": { "dataType": "string" },
             "imageUrl": { "dataType": "string" },
             "isAvailable": { "dataType": "boolean" },
+            "popular": { "dataType": "boolean" },
             "categoryId": { "dataType": "string" },
         },
         "additionalProperties": false,
@@ -375,6 +361,15 @@ const models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PinLoginDto": {
+        "dataType": "refObject",
+        "properties": {
+            "userId": { "dataType": "string", "required": true },
+            "pin": { "dataType": "string", "required": true },
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 };
 const templateService = new runtime_1.ExpressTemplateService(models, { "noImplicitAdditionalProperties": "silently-remove-extras", "bodyCoercion": true });
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -384,7 +379,7 @@ function RegisterRoutes(app) {
     //      Please look into the "controllerPathGlobs" config option described in the readme: https://github.com/lukeautry/tsoa
     // ###########################################################################################################
     const argsUserController_getUsers = {};
-    app.get('/api/users', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.getUsers)), async function UserController_getUsers(request, response, next) {
+    app.get('/api/users', ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.getUsers)), async function UserController_getUsers(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -430,7 +425,7 @@ function RegisterRoutes(app) {
     const argsUserController_createUser = {
         requestBody: { "in": "body", "name": "requestBody", "required": true, "ref": "CreateUserDto" },
     };
-    app.post('/api/users', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.createUser)), async function UserController_createUser(request, response, next) {
+    app.post('/api/users', authenticateMiddleware([{ "bearerAuth": ["ADMIN"] }]), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.createUser)), async function UserController_createUser(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -454,7 +449,7 @@ function RegisterRoutes(app) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "string" },
         requestBody: { "in": "body", "name": "requestBody", "required": true, "ref": "UpdateUserDto" },
     };
-    app.put('/api/users/:id', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.updateUser)), async function UserController_updateUser(request, response, next) {
+    app.put('/api/users/:id', authenticateMiddleware([{ "bearerAuth": ["ADMIN"] }]), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.updateUser)), async function UserController_updateUser(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -478,7 +473,7 @@ function RegisterRoutes(app) {
         id: { "in": "path", "name": "id", "required": true, "dataType": "string" },
         requestBody: { "in": "body", "name": "requestBody", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "isActive": { "dataType": "boolean", "required": true } } },
     };
-    app.put('/api/users/:id/status', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.updateUserStatus)), async function UserController_updateUserStatus(request, response, next) {
+    app.put('/api/users/:id/status', authenticateMiddleware([{ "bearerAuth": ["ADMIN"] }]), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.updateUserStatus)), async function UserController_updateUserStatus(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -501,7 +496,7 @@ function RegisterRoutes(app) {
     const argsUserController_deleteUser = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "string" },
     };
-    app.delete('/api/users/:id', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.deleteUser)), async function UserController_deleteUser(request, response, next) {
+    app.delete('/api/users/:id', authenticateMiddleware([{ "bearerAuth": ["ADMIN"] }]), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController)), ...((0, runtime_1.fetchMiddlewares)(user_controller_1.UserController.prototype.deleteUser)), async function UserController_deleteUser(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
@@ -568,7 +563,7 @@ function RegisterRoutes(app) {
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsRestaurantTableController_createTable = {
-        requestBody: { "in": "body", "name": "requestBody", "required": true, "ref": "CreateTableDto" },
+        requestBody: { "in": "body", "name": "requestBody", "required": true, "dataType": "any" },
     };
     app.post('/api/tables', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(table_controller_1.RestaurantTableController)), ...((0, runtime_1.fetchMiddlewares)(table_controller_1.RestaurantTableController.prototype.createTable)), async function RestaurantTableController_createTable(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -590,9 +585,32 @@ function RegisterRoutes(app) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsRestaurantTableController_transferTable = {
+        requestBody: { "in": "body", "name": "requestBody", "required": true, "dataType": "any" },
+    };
+    app.post('/api/tables/transfer', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(table_controller_1.RestaurantTableController)), ...((0, runtime_1.fetchMiddlewares)(table_controller_1.RestaurantTableController.prototype.transferTable)), async function RestaurantTableController_transferTable(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsRestaurantTableController_transferTable, request, response });
+            const controller = new table_controller_1.RestaurantTableController();
+            await templateService.apiHandler({
+                methodName: 'transferTable',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsRestaurantTableController_updateTable = {
         id: { "in": "path", "name": "id", "required": true, "dataType": "string" },
-        requestBody: { "in": "body", "name": "requestBody", "required": true, "ref": "UpdateTableDto" },
+        requestBody: { "in": "body", "name": "requestBody", "required": true, "dataType": "any" },
     };
     app.put('/api/tables/:id', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(table_controller_1.RestaurantTableController)), ...((0, runtime_1.fetchMiddlewares)(table_controller_1.RestaurantTableController.prototype.updateTable)), async function RestaurantTableController_updateTable(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -637,6 +655,30 @@ function RegisterRoutes(app) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsRestaurantTableController_reserveTable = {
+        id: { "in": "path", "name": "id", "required": true, "dataType": "string" },
+        requestBody: { "in": "body", "name": "requestBody", "required": true, "dataType": "any" },
+    };
+    app.patch('/api/tables/:id/reserve', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(table_controller_1.RestaurantTableController)), ...((0, runtime_1.fetchMiddlewares)(table_controller_1.RestaurantTableController.prototype.reserveTable)), async function RestaurantTableController_reserveTable(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsRestaurantTableController_reserveTable, request, response });
+            const controller = new table_controller_1.RestaurantTableController();
+            await templateService.apiHandler({
+                methodName: 'reserveTable',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsReportController_getRevenueReport = {
         startDate: { "in": "query", "name": "startDate", "dataType": "string" },
         endDate: { "in": "query", "name": "endDate", "dataType": "string" },
@@ -661,15 +703,15 @@ function RegisterRoutes(app) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    const argsPaymentController_getPayments = {};
-    app.get('/api/payments', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(payment_controller_1.PaymentController)), ...((0, runtime_1.fetchMiddlewares)(payment_controller_1.PaymentController.prototype.getPayments)), async function PaymentController_getPayments(request, response, next) {
+    const argsPaymentController_getAllPayments = {};
+    app.get('/api/payments', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(payment_controller_1.PaymentController)), ...((0, runtime_1.fetchMiddlewares)(payment_controller_1.PaymentController.prototype.getAllPayments)), async function PaymentController_getAllPayments(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {
-            validatedArgs = templateService.getValidatedArgs({ args: argsPaymentController_getPayments, request, response });
+            validatedArgs = templateService.getValidatedArgs({ args: argsPaymentController_getAllPayments, request, response });
             const controller = new payment_controller_1.PaymentController();
             await templateService.apiHandler({
-                methodName: 'getPayments',
+                methodName: 'getAllPayments',
                 controller,
                 response,
                 next,
@@ -706,7 +748,7 @@ function RegisterRoutes(app) {
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsPaymentController_createPayment = {
-        requestBody: { "in": "body", "name": "requestBody", "required": true, "ref": "CreatePaymentDto" },
+        requestBody: { "in": "body", "name": "requestBody", "required": true, "dataType": "intersection", "subSchemas": [{ "ref": "CreatePaymentDto" }, { "dataType": "nestedObjectLiteral", "nestedProperties": { "transferAmount": { "dataType": "double" }, "cashAmount": { "dataType": "double" } } }] },
     };
     app.post('/api/payments', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(payment_controller_1.PaymentController)), ...((0, runtime_1.fetchMiddlewares)(payment_controller_1.PaymentController.prototype.createPayment)), async function PaymentController_createPayment(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -815,6 +857,54 @@ function RegisterRoutes(app) {
                 next,
                 validatedArgs,
                 successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsOrderController_updateOrderItemStatus = {
+        itemId: { "in": "path", "name": "itemId", "required": true, "dataType": "string" },
+        requestBody: { "in": "body", "name": "requestBody", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "status": { "dataType": "string", "required": true } } },
+    };
+    app.patch('/api/orders/items/:itemId/status', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(order_controller_1.OrderController)), ...((0, runtime_1.fetchMiddlewares)(order_controller_1.OrderController.prototype.updateOrderItemStatus)), async function OrderController_updateOrderItemStatus(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsOrderController_updateOrderItemStatus, request, response });
+            const controller = new order_controller_1.OrderController();
+            await templateService.apiHandler({
+                methodName: 'updateOrderItemStatus',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsOrderController_updateGuestCount = {
+        id: { "in": "path", "name": "id", "required": true, "dataType": "string" },
+        requestBody: { "in": "body", "name": "requestBody", "required": true, "dataType": "nestedObjectLiteral", "nestedProperties": { "guestCount": { "dataType": "double", "required": true } } },
+    };
+    app.patch('/api/orders/:id/guest-count', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(order_controller_1.OrderController)), ...((0, runtime_1.fetchMiddlewares)(order_controller_1.OrderController.prototype.updateGuestCount)), async function OrderController_updateGuestCount(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsOrderController_updateGuestCount, request, response });
+            const controller = new order_controller_1.OrderController();
+            await templateService.apiHandler({
+                methodName: 'updateGuestCount',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
             });
         }
         catch (err) {
@@ -1119,10 +1209,33 @@ function RegisterRoutes(app) {
         }
     });
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    const argsAuthController_pinLogin = {
+        requestBody: { "in": "body", "name": "requestBody", "required": true, "ref": "PinLoginDto" },
+    };
+    app.post('/api/auth/pin-login', ...((0, runtime_1.fetchMiddlewares)(auth_controller_1.AuthController)), ...((0, runtime_1.fetchMiddlewares)(auth_controller_1.AuthController.prototype.pinLogin)), async function AuthController_pinLogin(request, response, next) {
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        let validatedArgs = [];
+        try {
+            validatedArgs = templateService.getValidatedArgs({ args: argsAuthController_pinLogin, request, response });
+            const controller = new auth_controller_1.AuthController();
+            await templateService.apiHandler({
+                methodName: 'pinLogin',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+            });
+        }
+        catch (err) {
+            return next(err);
+        }
+    });
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     const argsAuthController_getProfile = {
         request: { "in": "request", "name": "request", "required": true, "dataType": "object" },
     };
-    app.get('/api/auth/me', authenticateMiddleware([{ "jwt": [] }]), ...((0, runtime_1.fetchMiddlewares)(auth_controller_1.AuthController)), ...((0, runtime_1.fetchMiddlewares)(auth_controller_1.AuthController.prototype.getProfile)), async function AuthController_getProfile(request, response, next) {
+    app.get('/api/auth/me', authenticateMiddleware([{ "bearerAuth": [] }]), ...((0, runtime_1.fetchMiddlewares)(auth_controller_1.AuthController)), ...((0, runtime_1.fetchMiddlewares)(auth_controller_1.AuthController.prototype.getProfile)), async function AuthController_getProfile(request, response, next) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         let validatedArgs = [];
         try {

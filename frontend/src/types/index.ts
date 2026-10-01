@@ -29,6 +29,7 @@ export type TableStatus = 'AVAILABLE' | 'OCCUPIED' | 'BILL_REQUESTED' | 'RESERVE
 export interface TableReservation {
     customerName: string;
     time: string;
+    phone?: string;
     note?: string;
 }
 
@@ -42,6 +43,10 @@ export interface Table {
     area?: string;
     activeOrderId?: string;
     reservationInfo?: TableReservation;
+    // 🔥 THÊM 3 DÒNG NÀY ĐỂ KHỚP VỚI BACKEND TRẢ VỀ
+    customerName?: string;
+    customerPhone?: string;
+    reservationTime?: string;
 }
 
 export interface OrderItem {

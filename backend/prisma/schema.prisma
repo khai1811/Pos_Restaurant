@@ -104,7 +104,11 @@ model RestaurantTable {
   capacity    Int
   status      TableStatus @default(AVAILABLE)
 
-area        String      @default("Sảnh chính")
+  area        String      @default("Sảnh chính")
+
+  customerName    String?
+  customerPhone   String?
+  reservationTime String?
 
   orders Order[]
 
@@ -118,13 +122,14 @@ model Order {
   id String @id @default(uuid())
 
   tableId String?
-table   RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  table   RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   staffId String
   staff   User @relation(fields: [staffId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   status      OrderStatus @default(PENDING)
   totalAmount Decimal    @default(0) @db.Decimal(12, 2)
   note        String?
+  guestCount  Int         @default(1)
 
   orderItems OrderItem[]
   payment    Payment?

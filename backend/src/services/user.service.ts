@@ -23,7 +23,7 @@ export class UserService {
     async getAll(): Promise<UserEntity[]> {
         const users = await prisma.user.findMany({
             // Chỉ lấy những nhân viên đang hoạt động (chưa bị xóa mềm)
-            where: { isActive: true },
+            // where: { isActive: true },
             select: userSelectFields,
             orderBy: { createdAt: 'desc' },
         });

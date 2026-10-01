@@ -197,6 +197,7 @@ const models: TsoaRoute.Models = {
             "status": {"ref":"OrderStatus","required":true},
             "totalAmount": {"dataType":"double","required":true},
             "note": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
+            "guestCount": {"dataType":"double"},
             "items": {"dataType":"array","array":{"dataType":"refObject","ref":"OrderItemResponseDto"},"required":true},
             "createdAt": {"dataType":"datetime","required":true},
             "updatedAt": {"dataType":"datetime","required":true},
@@ -220,6 +221,7 @@ const models: TsoaRoute.Models = {
             "tableId": {"dataType":"string","required":true},
             "userId": {"dataType":"string","required":true},
             "note": {"dataType":"string"},
+            "guestCount": {"dataType":"double"},
             "items": {"dataType":"array","array":{"dataType":"refObject","ref":"CreateOrderItemDto"},"required":true},
         },
         "additionalProperties": false,
@@ -765,6 +767,38 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsRestaurantTableController_reserveTable: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                requestBody: {"in":"body","name":"requestBody","required":true,"dataType":"any"},
+        };
+        app.patch('/api/tables/:id/reserve',
+            authenticateMiddleware([{"bearerAuth":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(RestaurantTableController)),
+            ...(fetchMiddlewares<RequestHandler>(RestaurantTableController.prototype.reserveTable)),
+
+            async function RestaurantTableController_reserveTable(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsRestaurantTableController_reserveTable, request, response });
+
+                const controller = new RestaurantTableController();
+
+              await templateService.apiHandler({
+                methodName: 'reserveTable',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsReportController_getRevenueReport: Record<string, TsoaRoute.ParameterSchema> = {
                 startDate: {"in":"query","name":"startDate","dataType":"string"},
                 endDate: {"in":"query","name":"endDate","dataType":"string"},
@@ -1036,6 +1070,38 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'updateOrderItemStatus',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsOrderController_updateGuestCount: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"dataType":"string"},
+                requestBody: {"in":"body","name":"requestBody","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"guestCount":{"dataType":"double","required":true}}},
+        };
+        app.patch('/api/orders/:id/guest-count',
+            authenticateMiddleware([{"bearerAuth":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(OrderController)),
+            ...(fetchMiddlewares<RequestHandler>(OrderController.prototype.updateGuestCount)),
+
+            async function OrderController_updateGuestCount(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsOrderController_updateGuestCount, request, response });
+
+                const controller = new OrderController();
+
+              await templateService.apiHandler({
+                methodName: 'updateGuestCount',
                 controller,
                 response,
                 next,

@@ -43,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
         const interval = setInterval(updateTime, 1000);
         return () => clearInterval(interval);
     }, []);
+
     useEffect(() => {
         const token = localStorage.getItem('accessToken');
         const user = localStorage.getItem('user');
@@ -63,10 +64,16 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
         try {
             const res = await axiosClient.get('/users');
             const data = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-            setStaffList(data);
-            if (data.length > 0) {
-                const found = data.find((s: any) => s.id === currentStaff?.id) || data[0];
+
+            // 🔥 CHỈ LẤY NHỮNG NHÂN VIÊN CHƯA BỊ KHÓA
+            const activeStaffs = data.filter((s: any) => s.isActive !== false);
+
+            setStaffList(activeStaffs);
+            if (activeStaffs.length > 0) {
+                const found = activeStaffs.find((s: any) => s.id === currentStaff?.id) || activeStaffs[0];
                 setSelectedStaff(found);
+            } else {
+                setSelectedStaff(null);
             }
         } catch (err) { console.error('Lỗi tải danh sách nhân viên:', err); }
     };
@@ -105,7 +112,6 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
             if (role === 'KITCHEN') {
                 navigate('/kitchen');
             } else {
-                // Ép trình duyệt tải lại trang để API tự động lấy dữ liệu bàn bằng token mới
                 window.location.href = '/';
             }
         } catch (err: any) {
@@ -138,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
         { path: '/history', name: 'Lịch sử giao dịch', icon: History, show: ['ADMIN', 'CASHIER'].includes(userRole) },
         { path: '/kitchen', name: 'Màn hình Bếp (KDS)', icon: ChefHat, show: ['ADMIN', 'KITCHEN', 'STAFF'].includes(userRole) },
         { path: '/staff', name: 'Quản lý nhân sự', icon: Users, show: userRole === 'ADMIN' },
-        { path: '/settings', name: 'Cài đặt hệ thống', icon: Settings, show: userRole === 'ADMIN' },
+        { path: '/settings', name: 'Cài đặt hệ thống', icon: Settings, show: userRole === 'ADMIN' || userRole === 'CASHIER' || userRole === 'STAFF' },
     ].filter(item => item.show);
 
     return (
@@ -168,7 +174,8 @@ export const Navbar: React.FC<NavbarProps> = ({ occupiedTablesCount = 0 }) => {
                             <span className="text-[10px] font-medium">{date}</span>
                         </div>
 
-                        {userRole === 'ADMIN' && (
+                        {/* Đã mở nút Cài đặt cho cả 3 Role */}
+                        {['ADMIN', 'CASHIER', 'STAFF'].includes(userRole) && (
                             <button
                                 onClick={() => navigate('/settings')}
                                 className="p-2 text-slate-500 dark:text-slate-400 hover:text-[#1890ff] dark:hover:text-[#3ba0ff] hover:bg-blue-50 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"

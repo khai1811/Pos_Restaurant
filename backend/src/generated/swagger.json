@@ -386,6 +386,10 @@
 						"type": "string",
 						"nullable": true
 					},
+					"guestCount": {
+						"type": "number",
+						"format": "double"
+					},
 					"items": {
 						"items": {
 							"$ref": "#/components/schemas/OrderItemResponseDto"
@@ -446,6 +450,10 @@
 					},
 					"note": {
 						"type": "string"
+					},
+					"guestCount": {
+						"type": "number",
+						"format": "double"
 					},
 					"items": {
 						"items": {
@@ -1341,6 +1349,53 @@
 				}
 			}
 		},
+		"/api/tables/{id}/reserve": {
+			"patch": {
+				"operationId": "ReserveTable",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request"
+					},
+					"404": {
+						"description": "Table not found"
+					}
+				},
+				"tags": [
+					"Restaurant Table"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {}
+						}
+					}
+				}
+			}
+		},
 		"/api/reports/revenue": {
 			"get": {
 				"operationId": "GetRevenueReport",
@@ -1718,6 +1773,63 @@
 								},
 								"required": [
 									"status"
+								],
+								"type": "object"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/api/orders/{id}/guest-count": {
+			"patch": {
+				"operationId": "UpdateGuestCount",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/OrderResponseDto"
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request"
+					}
+				},
+				"tags": [
+					"Order"
+				],
+				"security": [
+					{
+						"bearerAuth": []
+					}
+				],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"properties": {
+									"guestCount": {
+										"type": "number",
+										"format": "double"
+									}
+								},
+								"required": [
+									"guestCount"
 								],
 								"type": "object"
 							}

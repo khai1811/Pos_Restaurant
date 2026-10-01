@@ -8,7 +8,17 @@ class MenuItemService {
         const whereCondition = categoryId ? { categoryId } : {};
         const items = await prisma_1.prisma.menuItem.findMany({
             where: whereCondition,
-            include: {
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+                // 🔥 NẾU TỐC ĐỘ VẪN CHẬM, HÃY THÊM DẤU // VÀO TRƯỚC DÒNG BÊN DƯỚI ĐỂ TẮT TẢI ẢNH (Base64)
+                imageUrl: true,
+                isAvailable: true,
+                popular: true,
+                categoryId: true,
+                createdAt: true,
                 category: {
                     select: { name: true },
                 },
@@ -18,13 +28,24 @@ class MenuItemService {
         return items.map((item) => new menu_item_entity_1.MenuItemEntity({
             ...item,
             price: Number(item.price),
+            imageUrl: item.imageUrl,
+            popular: item.popular,
             categoryName: item.category?.name,
         }));
     }
     async getById(id) {
         const item = await prisma_1.prisma.menuItem.findUnique({
             where: { id },
-            include: {
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+                imageUrl: true,
+                isAvailable: true,
+                popular: true,
+                categoryId: true,
+                createdAt: true,
                 category: {
                     select: { name: true },
                 },
@@ -35,6 +56,8 @@ class MenuItemService {
         return new menu_item_entity_1.MenuItemEntity({
             ...item,
             price: Number(item.price),
+            imageUrl: item.imageUrl,
+            popular: item.popular,
             categoryName: item.category?.name,
         });
     }
@@ -45,16 +68,27 @@ class MenuItemService {
         if (!category) {
             throw new Error('Danh mục không tồn tại');
         }
+        const imageValue = data.imageUrl || data.image || null;
         const item = await prisma_1.prisma.menuItem.create({
             data: {
                 name: data.name,
                 description: data.description,
                 price: data.price,
-                imageUrl: data.imageUrl,
+                imageUrl: imageValue,
                 isAvailable: data.isAvailable ?? true,
+                popular: data.popular ?? false,
                 categoryId: data.categoryId,
             },
-            include: {
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+                imageUrl: true,
+                isAvailable: true,
+                popular: true,
+                categoryId: true,
+                createdAt: true,
                 category: {
                     select: { name: true },
                 },
@@ -63,6 +97,8 @@ class MenuItemService {
         return new menu_item_entity_1.MenuItemEntity({
             ...item,
             price: Number(item.price),
+            imageUrl: item.imageUrl,
+            popular: item.popular,
             categoryName: item.category?.name,
         });
     }
@@ -79,10 +115,33 @@ class MenuItemService {
                 throw new Error('Danh mục không tồn tại');
             }
         }
+        const imageValue = data.imageUrl !== undefined
+            ? data.imageUrl
+            : (data.image !== undefined ? data.image : undefined);
+        const updateData = {
+            name: data.name,
+            description: data.description,
+            price: data.price,
+            isAvailable: data.isAvailable,
+            popular: data.popular,
+            categoryId: data.categoryId,
+        };
+        if (imageValue !== undefined) {
+            updateData.imageUrl = imageValue || null;
+        }
         const updated = await prisma_1.prisma.menuItem.update({
             where: { id },
-            data,
-            include: {
+            data: updateData,
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                price: true,
+                imageUrl: true,
+                isAvailable: true,
+                popular: true,
+                categoryId: true,
+                createdAt: true,
                 category: {
                     select: { name: true },
                 },
@@ -91,6 +150,8 @@ class MenuItemService {
         return new menu_item_entity_1.MenuItemEntity({
             ...updated,
             price: Number(updated.price),
+            imageUrl: updated.imageUrl,
+            popular: updated.popular,
             categoryName: updated.category?.name,
         });
     }

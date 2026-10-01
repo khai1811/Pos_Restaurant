@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
+// src/controllers/user.controller.ts
 const tsoa_1 = require("tsoa");
 const user_service_1 = require("../services/user.service");
 let UserController = class UserController extends tsoa_1.Controller {
@@ -52,7 +53,7 @@ let UserController = class UserController extends tsoa_1.Controller {
     }
     async updateUserStatus(id, requestBody) {
         try {
-            return await this.userService.update(id, requestBody);
+            return await this.userService.update(id, { isActive: requestBody.isActive });
         }
         catch (error) {
             this.setStatus(400);
@@ -78,6 +79,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "getUsers", null);
 __decorate([
+    (0, tsoa_1.Security)('bearerAuth'),
     (0, tsoa_1.Get)('{id}'),
     (0, tsoa_1.Response)(404, 'User not found'),
     __param(0, (0, tsoa_1.Path)()),
@@ -87,6 +89,8 @@ __decorate([
 ], UserController.prototype, "getUser", null);
 __decorate([
     (0, tsoa_1.Post)('/'),
+    (0, tsoa_1.Security)('bearerAuth', ['ADMIN']) // <--- CHỈ ADMIN MỚI ĐƯỢC TẠO
+    ,
     (0, tsoa_1.SuccessResponse)(201, 'Created'),
     (0, tsoa_1.Response)(400, 'Bad Request'),
     __param(0, (0, tsoa_1.Body)()),
@@ -96,6 +100,8 @@ __decorate([
 ], UserController.prototype, "createUser", null);
 __decorate([
     (0, tsoa_1.Put)('{id}'),
+    (0, tsoa_1.Security)('bearerAuth', ['ADMIN']) // <--- CHỈ ADMIN MỚI ĐƯỢC SỬA
+    ,
     (0, tsoa_1.Response)(400, 'Bad Request'),
     (0, tsoa_1.Response)(404, 'User not found'),
     __param(0, (0, tsoa_1.Path)()),
@@ -106,6 +112,8 @@ __decorate([
 ], UserController.prototype, "updateUser", null);
 __decorate([
     (0, tsoa_1.Put)('{id}/status'),
+    (0, tsoa_1.Security)('bearerAuth', ['ADMIN']) // <--- CHỈ ADMIN MỚI ĐƯỢC ĐỔI TRẠNG THÁI
+    ,
     (0, tsoa_1.Response)(400, 'Bad Request'),
     (0, tsoa_1.Response)(404, 'User not found'),
     __param(0, (0, tsoa_1.Path)()),
@@ -116,6 +124,8 @@ __decorate([
 ], UserController.prototype, "updateUserStatus", null);
 __decorate([
     (0, tsoa_1.Delete)('{id}'),
+    (0, tsoa_1.Security)('bearerAuth', ['ADMIN']) // <--- CHỈ ADMIN MỚI ĐƯỢC XÓA
+    ,
     (0, tsoa_1.Response)(400, 'Bad Request'),
     __param(0, (0, tsoa_1.Path)()),
     __metadata("design:type", Function),
@@ -124,6 +134,6 @@ __decorate([
 ], UserController.prototype, "deleteUser", null);
 exports.UserController = UserController = __decorate([
     (0, tsoa_1.Route)('api/users'),
-    (0, tsoa_1.Tags)('User'),
-    (0, tsoa_1.Security)('bearerAuth') // Đã bật bảo mật
+    (0, tsoa_1.Tags)('User')
+    // @Security('bearerAuth')
 ], UserController);

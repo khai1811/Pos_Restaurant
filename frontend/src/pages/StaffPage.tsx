@@ -90,6 +90,16 @@ export default function StaffPage() {
         }
     };
 
+    const handleToggleStaffStatus = async (staffId: string, currentStatus: boolean) => {
+        try {
+            await axiosClient.put(`/users/${staffId}/status`, { isActive: !currentStatus });
+            alert(`Đã ${!currentStatus ? 'mở khóa' : 'khóa'} tài khoản nhân viên!`);
+            fetchStaffs();
+        } catch (error: any) {
+            alert(error.response?.data?.message || 'Lỗi khi cập nhật trạng thái nhân viên!');
+        }
+    };
+
     return (
         <div className="fixed inset-0 flex flex-col w-screen h-[100dvh] bg-[#f0f4f8] dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 overflow-hidden overscroll-none select-none transition-colors duration-300">
             <div className="shrink-0 z-20 shadow-sm border-b border-slate-200/60 dark:border-slate-800/60">
@@ -111,6 +121,7 @@ export default function StaffPage() {
                                 onAddStaff={handleAddStaff}
                                 onUpdateStaff={handleUpdateStaff}
                                 onDeleteStaff={handleDeleteStaff}
+                                onToggleStatus={handleToggleStaffStatus}
                             />
                         )}
                     </div>

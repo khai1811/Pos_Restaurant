@@ -26,6 +26,7 @@ export class OrderEntity {
     status!: OrderStatus;
     totalAmount!: number;
     note!: string | null;
+    guestCount!: number;
     items!: OrderItemEntity[]; // Đã sửa: Bắt buộc là mảng OrderItemEntity[]
     createdAt!: Date;
     updatedAt!: Date;
@@ -33,5 +34,6 @@ export class OrderEntity {
     constructor(partial: Partial<OrderEntity>) {
         Object.assign(this, partial);
         this.items = partial.items || []; // Khởi tạo mảng rỗng nếu undefined
+        this.guestCount = partial.guestCount || 1;
     }
 }

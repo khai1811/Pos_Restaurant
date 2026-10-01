@@ -79,7 +79,7 @@ export class UserController extends Controller {
         @Body() requestBody: { isActive: boolean }
     ): Promise<UserResponseDto> {
         try {
-            return await this.userService.update(id, requestBody as any);
+            return await this.userService.update(id, { isActive: requestBody.isActive } as any);
         } catch (error: any) {
             this.setStatus(400);
             throw new Error(error.message);

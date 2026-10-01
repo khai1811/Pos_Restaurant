@@ -13,8 +13,8 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
-const tsoa_1 = require("tsoa");
-const auth_service_1 = require("../services/auth.service");
+const tsoa_1 = require("tsoa"); //[cite: 36]
+const auth_service_1 = require("../services/auth.service"); //[cite: 36]
 let AuthController = class AuthController extends tsoa_1.Controller {
     constructor() {
         super(...arguments);
@@ -39,8 +39,16 @@ let AuthController = class AuthController extends tsoa_1.Controller {
             throw new Error(error.message);
         }
     }
+    async pinLogin(requestBody) {
+        try {
+            return await this.authService.pinLogin(requestBody);
+        }
+        catch (error) {
+            this.setStatus(400);
+            throw new Error(error.message);
+        }
+    }
     async getProfile(request) {
-        // Thuộc tính user được inject từ authentication middleware
         return request.user;
     }
 };
@@ -63,8 +71,16 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([
+    (0, tsoa_1.Post)('/pin-login'),
+    (0, tsoa_1.Response)(400, 'Bad Request'),
+    __param(0, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "pinLogin", null);
+__decorate([
     (0, tsoa_1.Get)('/me'),
-    (0, tsoa_1.Security)('jwt'),
+    (0, tsoa_1.Security)('bearerAuth'),
     (0, tsoa_1.Response)(401, 'Unauthorized'),
     __param(0, (0, tsoa_1.Request)()),
     __metadata("design:type", Function),

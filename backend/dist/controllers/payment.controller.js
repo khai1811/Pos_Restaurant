@@ -14,14 +14,13 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentController = void 0;
 const tsoa_1 = require("tsoa");
-const payment_dto_1 = require("../dtos/payment.dto");
 const payment_service_1 = require("../services/payment.service");
 let PaymentController = class PaymentController extends tsoa_1.Controller {
     constructor() {
         super(...arguments);
         this.paymentService = new payment_service_1.PaymentService();
     }
-    async getPayments() {
+    async getAllPayments() {
         return this.paymentService.getAll();
     }
     async getPaymentById(id) {
@@ -49,7 +48,7 @@ __decorate([
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
-], PaymentController.prototype, "getPayments", null);
+], PaymentController.prototype, "getAllPayments", null);
 __decorate([
     (0, tsoa_1.Get)('{id}'),
     (0, tsoa_1.Response)(404, 'Payment not found'),
@@ -64,7 +63,7 @@ __decorate([
     (0, tsoa_1.Response)(400, 'Bad Request'),
     __param(0, (0, tsoa_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [payment_dto_1.CreatePaymentDto]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], PaymentController.prototype, "createPayment", null);
 exports.PaymentController = PaymentController = __decorate([
@@ -72,3 +71,4 @@ exports.PaymentController = PaymentController = __decorate([
     (0, tsoa_1.Tags)('Payment'),
     (0, tsoa_1.Security)('bearerAuth')
 ], PaymentController);
+//PAYMENT

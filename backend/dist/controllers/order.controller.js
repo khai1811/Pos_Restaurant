@@ -41,12 +41,11 @@ let OrderController = class OrderController extends tsoa_1.Controller {
     }
     async createOrder(request, requestBody) {
         try {
-            // Lấy trực tiếp userId từ token đã đăng nhập
             const user = request.user;
             const userId = user?.id || user?.userId;
             if (!userId) {
                 this.setStatus(401);
-                throw new Error('Không tìm thấy thông tin xác thực người dùng');
+                throw new Error('Không tìm thấy thông tự xác thực người dùng');
             }
             this.setStatus(201);
             return await this.orderService.create({
@@ -63,6 +62,27 @@ let OrderController = class OrderController extends tsoa_1.Controller {
     async updateOrderStatus(id, requestBody) {
         try {
             return await this.orderService.updateStatus(id, requestBody);
+        }
+        catch (error) {
+            this.setStatus(400);
+            throw new Error(error.message);
+        }
+    }
+    // =========================================================
+    // API: CẬP NHẬT TRẠNG THÁI RIÊNG LẺ TỪNG MÓN CHO BẾP
+    // =========================================================
+    async updateOrderItemStatus(itemId, requestBody) {
+        try {
+            return await this.orderService.updateOrderItemStatus(itemId, requestBody.status);
+        }
+        catch (error) {
+            this.setStatus(400);
+            throw new Error(error.message);
+        }
+    }
+    async updateGuestCount(id, requestBody) {
+        try {
+            return await this.orderService.updateGuestCount(id, requestBody.guestCount);
         }
         catch (error) {
             this.setStatus(400);
@@ -106,6 +126,26 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], OrderController.prototype, "updateOrderStatus", null);
+__decorate([
+    (0, tsoa_1.Patch)('items/{itemId}/status'),
+    (0, tsoa_1.SuccessResponse)(200, 'OK'),
+    (0, tsoa_1.Response)(400, 'Bad Request'),
+    __param(0, (0, tsoa_1.Path)()),
+    __param(1, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "updateOrderItemStatus", null);
+__decorate([
+    (0, tsoa_1.Patch)('{id}/guest-count'),
+    (0, tsoa_1.SuccessResponse)(200, 'OK'),
+    (0, tsoa_1.Response)(400, 'Bad Request'),
+    __param(0, (0, tsoa_1.Path)()),
+    __param(1, (0, tsoa_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], OrderController.prototype, "updateGuestCount", null);
 exports.OrderController = OrderController = __decorate([
     (0, tsoa_1.Route)('api/orders'),
     (0, tsoa_1.Tags)('Order'),

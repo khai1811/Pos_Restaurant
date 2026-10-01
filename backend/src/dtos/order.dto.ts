@@ -10,6 +10,7 @@ export interface CreateOrderDto {
     tableId: string;
     userId: string;
     note?: string;
+    guestCount?: number;
     items: CreateOrderItemDto[];
 }
 
@@ -36,6 +37,7 @@ export interface OrderResponseDto {
     status: OrderStatus;
     totalAmount: number;
     note: string | null;
+    guestCount?: number;
     items: OrderItemResponseDto[];
     createdAt: Date;
     updatedAt: Date;

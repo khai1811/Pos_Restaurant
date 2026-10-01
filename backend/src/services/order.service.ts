@@ -39,6 +39,7 @@ export class OrderService {
             totalAmount: Number(order?.totalAmount || 0),
             tableNumber: order?.table?.tableNumber,
             userName: staff?.fullName || staff?.username || '',
+            guestCount: order?.guestCount || 1, // Lấy số lượng khách
             items: items.map(
                 (item: any) =>
                     new OrderItemEntity({
@@ -66,6 +67,7 @@ export class OrderService {
                 createdAt: true,
                 tableId: true,
                 staffId: true,
+                guestCount: true,
                 table: { select: { id: true, tableNumber: true, area: true } },
                 staff: { select: { id: true, fullName: true, username: true } },
                 orderItems: {
@@ -106,6 +108,7 @@ export class OrderService {
                 createdAt: true,
                 tableId: true,
                 staffId: true,
+                guestCount: true,
                 table: { select: { id: true, tableNumber: true, area: true } },
                 staff: { select: { id: true, fullName: true, username: true } },
                 orderItems: {
@@ -188,7 +191,10 @@ export class OrderService {
                 existingOrder = await tx.order.findFirst({
                     where: {
                         tableId: String(data.tableId),
-                        status: OrderStatus.PENDING,
+                        status: {
+                            // Tìm hóa đơn ở mọi trạng thái đang hoạt động
+                            in: [OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.SERVED]
+                        }
                     },
                     include: { orderItems: true },
                 });
@@ -198,22 +204,52 @@ export class OrderService {
 
             if (existingOrder) {
                 for (const newItem of orderItemsData) {
-                    await tx.orderItem.create({
-                        data: {
+                    // Kiểm tra xem món này đã có trong Bill và đang "Chờ bếp" (PENDING) chưa?
+                    const existingItem = await tx.orderItem.findFirst({
+                        where: {
                             orderId: existingOrder.id,
                             menuItemId: newItem.menuItemId,
-                            quantity: newItem.quantity,
-                            price: newItem.price,
-                            subtotal: newItem.subtotal,
-                        },
+                            status: 'PENDING'
+                        }
                     });
+
+                    if (existingItem) {
+                        // CỘNG DỒN số lượng và thành tiền
+                        await tx.orderItem.update({
+                            where: { id: existingItem.id },
+                            data: {
+                                quantity: existingItem.quantity + newItem.quantity,
+                                subtotal: Number(existingItem.subtotal) + newItem.subtotal
+                            }
+                        });
+                    } else {
+                        // TẠO DÒNG MỚI
+                        await tx.orderItem.create({
+                            data: {
+                                orderId: existingOrder.id,
+                                menuItemId: newItem.menuItemId,
+                                quantity: newItem.quantity,
+                                price: newItem.price,
+                                subtotal: newItem.subtotal,
+                            },
+                        });
+                    }
                 }
 
                 const newTotalAmount = Number(existingOrder.totalAmount) + additionalAmount;
+                const updatePayload: any = {
+                    totalAmount: newTotalAmount,
+                    status: OrderStatus.PENDING // Đánh thức hóa đơn để Bếp nhìn thấy
+                };
+
+                // Cập nhật số lượng khách nếu có truyền lên
+                if (data.guestCount) {
+                    updatePayload.guestCount = data.guestCount;
+                }
 
                 targetOrder = await tx.order.update({
                     where: { id: existingOrder.id },
-                    data: { totalAmount: newTotalAmount },
+                    data: updatePayload,
                     select: {
                         id: true,
                         totalAmount: true,
@@ -221,6 +257,7 @@ export class OrderService {
                         createdAt: true,
                         tableId: true,
                         staffId: true,
+                        guestCount: true,
                         table: { select: { id: true, tableNumber: true, area: true } },
                         staff: { select: { id: true, fullName: true, username: true } },
                         orderItems: {
@@ -236,12 +273,22 @@ export class OrderService {
                     },
                 });
 
+                // Kéo bàn về trạng thái có khách nếu đang ở trạng thái chờ tính tiền
+                if (table) {
+                    await tx.restaurantTable.update({
+                        where: { id: String(data.tableId) },
+                        data: { status: TableStatus.OCCUPIED },
+                    });
+                }
+
             } else {
+                // TẠO ĐƠN HÀNG MỚI HOÀN TOÀN
                 const createData: any = {
                     tableId: table ? String(data.tableId) : null,
                     totalAmount: additionalAmount,
                     status: OrderStatus.PENDING,
                     staffId: String(data.userId),
+                    guestCount: data.guestCount || 1,
                     orderItems: { create: orderItemsData },
                 };
 
@@ -254,6 +301,7 @@ export class OrderService {
                         createdAt: true,
                         tableId: true,
                         staffId: true,
+                        guestCount: true,
                         table: { select: { id: true, tableNumber: true, area: true } },
                         staff: { select: { id: true, fullName: true, username: true } },
                         orderItems: {
@@ -300,6 +348,7 @@ export class OrderService {
                 createdAt: true,
                 tableId: true,
                 staffId: true,
+                guestCount: true,
                 table: { select: { id: true, tableNumber: true, area: true } },
                 staff: { select: { id: true, fullName: true, username: true } },
                 orderItems: {
@@ -354,5 +403,37 @@ export class OrderService {
         });
 
         return updatedItem;
+    }
+
+    // =========================================================
+    // CẬP NHẬT TRỰC TIẾP SỐ LƯỢNG KHÁCH (GUEST COUNT)
+    // =========================================================
+    async updateGuestCount(id: string, guestCount: number): Promise<OrderEntity> {
+        const order = await prisma.order.findUnique({ where: { id } });
+        if (!order) throw new Error('Không tìm thấy đơn hàng');
+
+        const updated = await prisma.order.update({
+            where: { id },
+            data: { guestCount: guestCount },
+            select: {
+                id: true,
+                totalAmount: true,
+                status: true,
+                createdAt: true,
+                tableId: true,
+                staffId: true,
+                guestCount: true,
+                table: { select: { id: true, tableNumber: true, area: true } },
+                staff: { select: { id: true, fullName: true, username: true } },
+                orderItems: {
+                    select: {
+                        id: true, quantity: true, price: true, subtotal: true, status: true,
+                        menuItem: { select: { id: true, name: true, price: true } }
+                    }
+                }
+            },
+        });
+
+        return this.mapToEntity(updated);
     }
 }

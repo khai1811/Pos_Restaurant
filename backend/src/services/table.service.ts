@@ -168,4 +168,26 @@ export class RestaurantTableService {
 
         return true;
     }
+    // --- LOGIC XỬ LÝ ĐẶT BÀN TRƯỚC ---
+    async reserveTable(id: string, data: { customerName: string; customerPhone: string; reservationTime: string }): Promise<TableEntity> {
+        const table = await prisma.restaurantTable.findUnique({ where: { id } });
+        if (!table) {
+            throw new Error('Không tìm thấy bàn');
+        }
+        if (table.status !== 'AVAILABLE') {
+            throw new Error('Bàn hiện không trống để đặt trước!');
+        }
+
+        const updated = await prisma.restaurantTable.update({
+            where: { id },
+            data: {
+                status: 'RESERVED',
+                customerName: data.customerName,
+                customerPhone: data.customerPhone,
+                reservationTime: data.reservationTime,
+            },
+        });
+
+        return new TableEntity(updated);
+    }
 }

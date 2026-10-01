@@ -108,3 +108,4 @@ exports.CategoryController = CategoryController = __decorate([
     (0, tsoa_1.Tags)('Category'),
     (0, tsoa_1.Security)('bearerAuth') // Đã bật bảo mật
 ], CategoryController);
+// trigger tsoa

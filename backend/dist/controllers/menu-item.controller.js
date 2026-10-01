@@ -43,6 +43,7 @@ let MenuItemController = class MenuItemController extends tsoa_1.Controller {
     }
     async updateMenuItem(id, requestBody) {
         try {
+            console.log("=== DỮ LIỆU TỪ WEB GỬI LÊN ===", requestBody);
             return await this.menuItemService.update(id, requestBody);
         }
         catch (error) {
@@ -107,5 +108,5 @@ __decorate([
 exports.MenuItemController = MenuItemController = __decorate([
     (0, tsoa_1.Route)('api/menu-items'),
     (0, tsoa_1.Tags)('MenuItem'),
-    (0, tsoa_1.Security)('bearerAuth') // Đã bật bảo mật
+    (0, tsoa_1.Security)('bearerAuth')
 ], MenuItemController);

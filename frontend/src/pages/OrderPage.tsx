@@ -7,10 +7,11 @@ import {
     ChevronLeft, Plus, Minus, Search, Trash2,
     CheckCircle2, CreditCard, DollarSign,
     QrCode, Wallet, X, Send, Users,
-    UtensilsCrossed, ShoppingCart, Layers, Flame
+    UtensilsCrossed, ShoppingCart, Layers, Flame,
+    CheckCircle
 } from 'lucide-react';
 
-interface MenuItem { id: string; name: string; price: number; description: string; category?: string; image?: string; popular?: boolean; }
+interface MenuItem { id: string; name: string; price: number; description: string; category?: string; image?: string; popular?: boolean; inStock?: boolean; }
 interface CartItem extends MenuItem { itemId?: string; quantity: number; note?: string; isSent?: boolean; status?: string; }
 
 export default function OrderPage() {
@@ -30,7 +31,10 @@ export default function OrderPage() {
     const [selectedCategory, setSelectedCategory] = useState('Tất cả');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [orderCode, setOrderCode] = useState<string>('ĐƠN MỚI');
+
+    // State lưu số lượng khách
     const [guestCount, setGuestCount] = useState<number>(1);
+    const [isUpdatingGuest, setIsUpdatingGuest] = useState(false);
 
     const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
     const [discountValue, setDiscountValue] = useState<number>(0);
@@ -52,7 +56,8 @@ export default function OrderPage() {
                 price: Number(m?.price || 0), description: String(typeof m?.description === 'string' ? m.description : ''),
                 category: String(typeof m?.category === 'string' ? m.category : (m?.category?.name || 'Khác')),
                 image: typeof m?.image === 'string' ? m.image : (m?.imageUrl || ''),
-                popular: m?.popular ?? m?.isPopular ?? false
+                popular: m?.popular ?? m?.isPopular ?? false,
+                inStock: m?.isAvailable ?? m?.inStock ?? true
             }));
             setMenuItems(formattedMenu);
         } catch (error) { console.error('Lỗi tải thực đơn:', error); }
@@ -74,18 +79,33 @@ export default function OrderPage() {
                     if (orderData && (orderData.id || orderData._id)) {
                         const oid = String(orderData.id || orderData._id || '');
                         if (oid) { setCreatedOrderId(oid); setOrderCode(`#${oid.slice(-6).toUpperCase()}`); }
-                        setGuestCount(orderData.guestCount || 2);
+
+                        // Lấy số khách từ database nếu có, mặc định là 1
+                        setGuestCount(orderData.guestCount || 1);
+
                         const currentItems = orderData.items || orderData.orderItems || [];
                         if (currentItems.length > 0) {
-                            const existingCart = currentItems.filter((it: any) => it != null).map((it: any) => ({
+                            const rawCart = currentItems.filter((it: any) => it != null).map((it: any) => ({
                                 itemId: it?.id, id: it?.menuItemId || it?.menuItem?.id || Math.random().toString(),
                                 name: it?.menuItem?.name || it?.name || 'Món ăn', price: Number(it?.price || it?.menuItem?.price || 0),
                                 quantity: Number(it?.quantity || 1), note: it?.note || '', isSent: true,
                                 status: (it?.status || it?.itemStatus || 'PENDING').toUpperCase()
                             }));
+
+                            // 🔥 THUẬT TOÁN GỘP HIỂN THỊ: Gộp các món CÙNG MÃ, CÙNG TRẠNG THÁI và CÙNG GHI CHÚ
+                            const aggregatedCart: CartItem[] = [];
+                            rawCart.forEach((item: any) => {
+                                const existing = aggregatedCart.find(a => a.id === item.id && a.status === item.status && a.note === item.note);
+                                if (existing) {
+                                    existing.quantity += item.quantity;
+                                } else {
+                                    aggregatedCart.push(item);
+                                }
+                            });
+
                             setCart(prev => {
                                 const localUnsent = prev.filter(item => !item.isSent);
-                                return [...existingCart, ...localUnsent];
+                                return [...aggregatedCart, ...localUnsent];
                             });
                         }
                     }
@@ -101,6 +121,26 @@ export default function OrderPage() {
         fetchMenu();
         fetchOrderInfo(false);
     }, [fetchOrderInfo]);
+
+    // Hàm cập nhật số lượng khách lên Backend
+    const handleUpdateGuestCount = async (newCount: number) => {
+        if (newCount < 1) return;
+        setGuestCount(newCount);
+
+        // Nếu đã có đơn hàng (đã gửi bếp ít nhất 1 lần) thì mới cập nhật lên Server
+        if (createdOrderId) {
+            setIsUpdatingGuest(true);
+            try {
+                // Giả định Backend có endpoint này. Nếu chưa có, Backend cần thêm PATCH /api/orders/:id/guest-count
+                await axiosClient.patch(`/orders/${createdOrderId}/guest-count`, { guestCount: newCount })
+                    .catch(() => axiosClient.put(`/orders/${createdOrderId}`, { guestCount: newCount }));
+            } catch (error) {
+                console.error("Lỗi cập nhật số khách:", error);
+            } finally {
+                setIsUpdatingGuest(false);
+            }
+        }
+    };
 
     const categories = useMemo(() => ['Tất cả', 'Món Hot 🔥', ...Array.from(new Set(menuItems.map(m => m.category || 'Khác')))], [menuItems]);
 
@@ -161,7 +201,11 @@ export default function OrderPage() {
         if (newItemsToSend.length === 0) return alert('Không có món mới nào cần lưu bếp!');
         setIsSubmitting(true);
         try {
-            const orderPayload: any = { items: newItemsToSend.map((i) => ({ menuItemId: i.id, quantity: i.quantity, note: i.note })) };
+            // Đính kèm guestCount khi tạo/cập nhật đơn hàng
+            const orderPayload: any = {
+                items: newItemsToSend.map((i) => ({ menuItemId: i.id, quantity: i.quantity, note: i.note })),
+                guestCount: guestCount
+            };
             if (tableId && tableId !== 'new-takeaway') orderPayload.tableId = tableId;
 
             setCart(prev => prev.filter(i => i.isSent));
@@ -185,7 +229,10 @@ export default function OrderPage() {
 
             const newItems = cart.filter(i => !i.isSent);
             if (!targetOrderId || newItems.length > 0) {
-                const orderPayload: any = { items: newItems.map((i) => ({ menuItemId: i.id, quantity: i.quantity, note: i.note })) };
+                const orderPayload: any = {
+                    items: newItems.map((i) => ({ menuItemId: i.id, quantity: i.quantity, note: i.note })),
+                    guestCount: guestCount
+                };
                 if (tableId && tableId !== 'new-takeaway') orderPayload.tableId = tableId;
                 setCart(prev => prev.filter(i => i.isSent));
                 const res = await orderApi.createOrder(orderPayload);
@@ -249,7 +296,11 @@ export default function OrderPage() {
                     <div className="flex-1 overflow-y-auto bg-[#f8fafc] dark:bg-slate-950 p-2.5">
                         <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
                             {filteredMenu.map((item) => (
-                                <div key={item.id} onClick={() => addToCart(item)} className="relative bg-white dark:bg-slate-800 aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer group active:scale-95 transition-transform">
+                                <div
+                                    key={item.id}
+                                    onClick={() => item.inStock && addToCart(item)}
+                                    className={`relative bg-white dark:bg-slate-800 aspect-[4/3] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm transition-transform ${item.inStock ? 'cursor-pointer group active:scale-95' : 'opacity-60 grayscale cursor-not-allowed'}`}
+                                >
                                     {item.image ? (
                                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                                     ) : (
@@ -257,19 +308,28 @@ export default function OrderPage() {
                                             <UtensilsCrossed size={24} strokeWidth={1.5} />
                                         </div>
                                     )}
-                                    <div className="absolute top-1.5 left-1.5 bg-white/95 dark:bg-slate-900/90 text-[#1890ff] dark:text-[#3ba0ff] text-[11px] font-black px-1.5 py-0.5 rounded shadow-sm border border-slate-100 dark:border-slate-700">
+                                    <div className="absolute top-1.5 left-1.5 bg-white/95 dark:bg-slate-900/90 text-[#1890ff] dark:text-[#3ba0ff] text-[11px] font-black px-1.5 py-0.5 rounded shadow-sm border border-slate-100 dark:border-slate-700 z-10">
                                         {item.price.toLocaleString('vi-VN')}
                                     </div>
 
-                                    {item.popular && (
+                                    {item.popular && item.inStock && (
                                         <div className="absolute top-1.5 right-1.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 z-10 border border-orange-400">
                                             <Flame size={11} className="fill-current" /> Hot
                                         </div>
                                     )}
 
-                                    <div className="absolute bottom-0 w-full bg-gradient-to-t from-black/80 via-black/50 to-transparent p-2 text-white text-[11px] font-bold leading-tight line-clamp-2">
+                                    <div className="absolute bottom-0 w-full bg-gradient-to-t from-black/80 via-black/50 to-transparent p-2 text-white text-[11px] font-bold leading-tight line-clamp-2 z-10">
                                         {item.name}
                                     </div>
+
+                                    {/* Overlay hiển thị chữ TẠM HẾT */}
+                                    {!item.inStock && (
+                                        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[1px] flex items-center justify-center z-20">
+                                            <span className="bg-rose-500 text-white font-black text-[12px] uppercase px-3 py-1 rounded shadow-lg -rotate-12 border border-rose-400">
+                                                Tạm Hết
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -278,17 +338,40 @@ export default function OrderPage() {
 
                 {/* CỘT PHẢI: GIỎ HÀNG */}
                 <div className="w-[320px] md:w-[340px] h-[100dvh] bg-white dark:bg-slate-900 flex flex-col shrink-0 z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.03)] border-l border-slate-200 dark:border-slate-800 transition-colors duration-300">
-                    <div className="h-12 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 flex justify-between items-center shrink-0">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-[#1890ff]/20 text-[#1890ff] dark:text-[#3ba0ff] flex items-center justify-center border border-blue-100 dark:border-[#1890ff]/30">
-                                <UtensilsCrossed size={16} strokeWidth={2.5} />
+                    <div className="h-14 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 flex justify-between items-center shrink-0">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-[#1890ff]/20 text-[#1890ff] dark:text-[#3ba0ff] flex items-center justify-center border border-blue-100 dark:border-[#1890ff]/30 shadow-sm">
+                                <UtensilsCrossed size={18} strokeWidth={2.5} />
                             </div>
                             <div className="leading-tight">
-                                <h3 className="font-black text-[13px] text-slate-800 dark:text-white">{tableName}</h3>
-                                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1"><Users size={10} /> {guestCount} khách</p>
+                                <h3 className="font-black text-[14px] text-slate-800 dark:text-white">{tableName}</h3>
+                                {/* 🔥 Cụm điều chỉnh số lượng khách */}
+                                <div className="flex items-center gap-1 mt-0.5">
+                                    <Users size={11} className="text-slate-500 dark:text-slate-400" />
+                                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded outline outline-1 outline-slate-200 dark:outline-slate-700 ml-1">
+                                        <button
+                                            onClick={() => handleUpdateGuestCount(guestCount - 1)}
+                                            disabled={guestCount <= 1 || isUpdatingGuest}
+                                            className="w-5 h-4 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer transition-colors"
+                                        >
+                                            <Minus size={10} strokeWidth={3} />
+                                        </button>
+                                        <span className="w-4 text-center text-[10px] font-black text-[#1890ff] dark:text-[#3ba0ff]">
+                                            {isUpdatingGuest ? '...' : guestCount}
+                                        </span>
+                                        <button
+                                            onClick={() => handleUpdateGuestCount(guestCount + 1)}
+                                            disabled={isUpdatingGuest}
+                                            className="w-5 h-4 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer transition-colors"
+                                        >
+                                            <Plus size={10} strokeWidth={3} />
+                                        </button>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 ml-1">khách</span>
+                                </div>
                             </div>
                         </div>
-                        <span className={`text-[10px] font-black px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300`}>{orderCode}</span>
+                        <span className={`text-[10px] font-black px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm`}>{orderCode}</span>
                     </div>
 
                     <div className="flex-1 overflow-y-auto bg-[#f8fafc] dark:bg-slate-950 p-2 space-y-2 scrollbar-none">
@@ -370,15 +453,15 @@ export default function OrderPage() {
                         <div className="flex w-full gap-2">
                             {canCheckout ? (
                                 <>
-                                    <button onClick={handleSendOrder} disabled={cart.length === 0 || isSubmitting} className="flex-1 py-2.5 bg-blue-50 dark:bg-slate-800 text-[#1890ff] dark:text-[#3ba0ff] rounded-lg font-black text-[12px] flex items-center justify-center gap-1.5 border border-blue-200 dark:border-slate-700 disabled:opacity-50">
+                                    <button onClick={handleSendOrder} disabled={cart.length === 0 || isSubmitting} className="flex-1 py-2.5 bg-blue-50 dark:bg-slate-800 text-[#1890ff] dark:text-[#3ba0ff] rounded-lg font-black text-[12px] flex items-center justify-center gap-1.5 border border-blue-200 dark:border-slate-700 disabled:opacity-50 cursor-pointer shadow-sm">
                                         <Send size={14} /> LƯU BẾP
                                     </button>
-                                    <button onClick={() => setCheckoutModal(true)} disabled={cart.length === 0} className="flex-1 py-2.5 bg-[#1890ff] text-white rounded-lg font-black text-[12px] flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50">
+                                    <button onClick={() => setCheckoutModal(true)} disabled={cart.length === 0} className="flex-1 py-2.5 bg-[#1890ff] hover:bg-blue-600 text-white rounded-lg font-black text-[12px] flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50 cursor-pointer">
                                         <CreditCard size={14} /> THU TIỀN
                                     </button>
                                 </>
                             ) : (
-                                <button onClick={handleSendOrder} disabled={cart.length === 0 || isSubmitting} className="w-full py-2.5 bg-[#1890ff] text-white rounded-lg font-black text-[12px] flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50">
+                                <button onClick={handleSendOrder} disabled={cart.length === 0 || isSubmitting} className="w-full py-2.5 bg-[#1890ff] hover:bg-blue-600 text-white rounded-lg font-black text-[12px] flex items-center justify-center gap-1.5 shadow-md disabled:opacity-50 cursor-pointer">
                                     <Send size={14} /> GỬI YÊU CẦU BẾP
                                 </button>
                             )}
@@ -392,7 +475,7 @@ export default function OrderPage() {
                         <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90dvh] overflow-hidden border border-slate-200 dark:border-slate-800">
                             <div className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900">
                                 <div><h3 className="text-[16px] font-black text-slate-800 dark:text-white flex items-center gap-2"><ShoppingCart className="text-[#1890ff]" size={20} /> Thanh Toán</h3><p className="text-[12px] text-slate-500 dark:text-slate-400 mt-1">{tableName} • {cart.reduce((a, b) => a + b.quantity, 0)} món</p></div>
-                                <button onClick={() => setCheckoutModal(false)} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-500/20 hover:text-rose-500 dark:text-slate-400 rounded-full transition-colors"><X size={18} /></button>
+                                <button onClick={() => setCheckoutModal(false)} className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-500/20 hover:text-rose-500 dark:text-slate-400 rounded-full transition-colors cursor-pointer"><X size={18} /></button>
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 dark:bg-slate-950/50 scrollbar-none">
@@ -401,7 +484,7 @@ export default function OrderPage() {
                                     {[{ id: 'CASH', label: 'Tiền mặt', icon: DollarSign }, { id: 'VIETQR', label: 'VietQR', icon: QrCode }, { id: 'POS', label: 'Thẻ POS', icon: CreditCard }, { id: 'SPLIT', label: 'Tách kênh', icon: Layers }].map(m => {
                                         const Icon = m.icon;
                                         return (
-                                            <button key={m.id} onClick={() => setPaymentMethod(m.id as any)} className={`py-3 rounded-xl border flex flex-col items-center justify-center gap-1 font-bold text-[11px] transition-colors ${paymentMethod === m.id ? 'bg-blue-50 dark:bg-[#1890ff]/20 border-[#1890ff] text-[#1890ff] shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
+                                            <button key={m.id} onClick={() => setPaymentMethod(m.id as any)} className={`py-3 rounded-xl border flex flex-col items-center justify-center gap-1 font-bold text-[11px] transition-colors cursor-pointer ${paymentMethod === m.id ? 'bg-blue-50 dark:bg-[#1890ff]/20 border-[#1890ff] text-[#1890ff] shadow-sm' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
                                                 <Icon size={18} />
                                                 {m.label}
                                             </button>
@@ -412,7 +495,7 @@ export default function OrderPage() {
                                 {paymentMethod === 'CASH' && (
                                     <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
                                         <input type="number" value={cashGiven || ''} onChange={e => setCashGiven(Number(e.target.value))} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2.5 text-[15px] font-black text-slate-900 dark:text-white outline-none focus:border-[#1890ff] transition-colors" placeholder="Khách đưa..." />
-                                        <div className="flex flex-wrap gap-2">{quickCashList.map(amt => <button key={amt} onClick={() => setCashGiven(amt)} className="px-3 py-1.5 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-[12px] font-bold hover:border-[#1890ff] dark:hover:border-[#1890ff] transition-colors">{formatVND(amt)}</button>)}</div>
+                                        <div className="flex flex-wrap gap-2">{quickCashList.map(amt => <button key={amt} onClick={() => setCashGiven(amt)} className="px-3 py-1.5 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-[12px] font-bold hover:border-[#1890ff] dark:hover:border-[#1890ff] transition-colors cursor-pointer">{formatVND(amt)}</button>)}</div>
                                         <div className="flex justify-between font-bold text-[13px] text-slate-600 dark:text-slate-400 border-t border-dashed border-slate-200 dark:border-slate-700 pt-3 mt-1"><span>Tiền thối:</span><span className="text-emerald-600 dark:text-emerald-400 text-lg">{formatVND(changeAmount)}</span></div>
                                     </div>
                                 )}
@@ -451,7 +534,9 @@ export default function OrderPage() {
                             </div>
 
                             <div className="p-4 border-t border-slate-200 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900">
-                                <button onClick={handleConfirmPayment} disabled={(paymentMethod === 'CASH' && cashGiven < finalTotal) || (paymentMethod === 'SPLIT' && splitCash + splitTransfer !== finalTotal)} className="w-full py-3.5 bg-[#1890ff] disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-xl font-black text-[13px] shadow-md uppercase tracking-wide transition-colors">XÁC NHẬN THU TIỀN</button>
+                                <button onClick={handleConfirmPayment} disabled={(paymentMethod === 'CASH' && Number(cashGiven) < finalTotal) || (paymentMethod === 'SPLIT' && splitCash + splitTransfer !== finalTotal)} className="w-full py-3.5 bg-[#1890ff] hover:bg-blue-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:text-slate-500 dark:disabled:text-slate-500 text-white py-3.5 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer uppercase tracking-wider border border-transparent">
+                                    <CheckCircle size={18} /> HOÀN TẤT THU TIỀN
+                                </button>
                             </div>
                         </div>
                     </div>

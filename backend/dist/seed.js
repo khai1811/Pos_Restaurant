@@ -1,8 +1,4 @@
 "use strict";
-// =====================================================
-// SEED DATABASE - POS RESTAURANT
-// Prisma 7 + PostgreSQL + TypeScript
-// =====================================================
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -10,23 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 require("dotenv/config");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const client_1 = require("@prisma/client");
-const adapter_pg_1 = require("@prisma/adapter-pg");
-if (!process.env.DATABASE_URL) {
-    throw new Error("❌ DATABASE_URL không tồn tại trong file .env");
-}
-const adapter = new adapter_pg_1.PrismaPg({
-    connectionString: process.env.DATABASE_URL,
-});
 const prisma = new client_1.PrismaClient();
 async function main() {
-    console.log("");
-    console.log("========================================");
-    console.log("🌱 BẮT ĐẦU SEED DATABASE");
-    console.log("========================================");
+    console.log("🌱 BẮT ĐẦU SEED DATABASE...");
     const passwordHash = await bcrypt_1.default.hash("123456", 10);
-    // ===================================================
-    // TẠO USERS
-    // ===================================================
+    // 1. TẠO USERS
     const users = [
         { username: "admin", fullName: "Quản trị viên", role: "ADMIN", email: "admin@pos.local", phone: "0900000001" },
         { username: "cashier", fullName: "Nhân viên thu ngân", role: "CASHIER", email: "cashier@pos.local", phone: "0900000002" },
@@ -40,9 +24,7 @@ async function main() {
         });
     }
     console.log("✅ Đã tạo / cập nhật 3 users");
-    // ===================================================
-    // TẠO CATEGORY CHI TIẾT
-    // ===================================================
+    // 2. TẠO CATEGORIES
     const categoriesData = [
         { name: "Lẩu", description: "Các món lẩu đặc biệt" },
         { name: "Nướng", description: "Các món nướng tại bàn" },
@@ -60,9 +42,7 @@ async function main() {
         });
     }
     console.log("✅ Đã tạo / cập nhật 6 categories");
-    // ===================================================
-    // TẠO MENU ITEM
-    // ===================================================
+    // 3. TẠO MENU ITEMS
     const menuItems = [
         { name: "Lẩu Thái hải sản", description: "Lẩu chua cay chuẩn vị Thái", price: 250000, cat: "Lẩu" },
         { name: "Bò nướng đá", description: "Thịt bò mềm nướng trên đá nóng", price: 180000, cat: "Nướng" },
@@ -85,20 +65,21 @@ async function main() {
         }
     }
     console.log(`✅ Đã tạo / cập nhật ${menuItems.length} menu items`);
-    // ===================================================
-    // TẠO 10 BÀN
-    // ===================================================
+    // 4. TẠO BÀN (BỎ QUA BÀN 2 VÀ XÓA BÀN 2 CŨ NẾU CÓ)
+    await prisma.restaurantTable.deleteMany({
+        where: { tableNumber: 2 },
+    });
     for (let i = 1; i <= 10; i++) {
+        if (i === 2)
+            continue;
         await prisma.restaurantTable.upsert({
             where: { tableNumber: i },
-            update: { capacity: i <= 6 ? 4 : 6 },
+            update: { capacity: i <= 6 ? 4 : 6, status: "AVAILABLE" },
             create: { tableNumber: i, capacity: i <= 6 ? 4 : 6, status: "AVAILABLE" },
         });
     }
-    console.log("✅ Đã tạo / cập nhật 10 bàn");
-    console.log("");
+    console.log("✅ Đã tạo danh sách bàn: 1, 3, 4, 5, 6, 7, 8, 9, 10");
     console.log("🎉 SEED DATABASE THÀNH CÔNG");
-    console.log("========================================");
 }
 main()
     .catch((e) => { console.error(e); process.exit(1); })

@@ -19,35 +19,49 @@ class OrderService {
             ...order,
             totalAmount: Number(order?.totalAmount || 0),
             tableNumber: order?.table?.tableNumber,
-            userName: staff?.fullName ||
-                staff?.username ||
-                '',
+            userName: staff?.fullName || staff?.username || '',
+            guestCount: order?.guestCount || 1, // Lấy số lượng khách
             items: items.map((item) => new order_entity_1.OrderItemEntity({
                 ...item,
-                unitPrice: Number(item?.price ??
-                    item?.unitPrice ??
-                    0),
+                unitPrice: Number(item?.price ?? item?.unitPrice ?? 0),
                 menuItemName: item?.menuItem?.name,
             })),
         });
     }
     // =========================================================
-    // GET ALL
+    // GET ALL (SIÊU TỐC: DÙNG SELECT LOẠI BỎ ẢNH NẶNG, GIỚI HẠN 100 ĐƠN)
     // =========================================================
     async getAll(status) {
-        const whereCondition = status
-            ? { status }
-            : {};
+        const whereCondition = status ? { status } : {};
         const orders = await prisma_1.prisma.order.findMany({
             where: whereCondition,
-            include: {
-                table: true,
-                staff: true,
+            take: 100,
+            select: {
+                id: true,
+                totalAmount: true,
+                status: true,
+                createdAt: true,
+                tableId: true,
+                staffId: true,
+                guestCount: true,
+                table: { select: { id: true, tableNumber: true, area: true } },
+                staff: { select: { id: true, fullName: true, username: true } },
                 orderItems: {
-                    include: {
-                        menuItem: true,
-                    },
-                },
+                    select: {
+                        id: true,
+                        quantity: true,
+                        price: true,
+                        subtotal: true,
+                        status: true,
+                        menuItem: {
+                            select: {
+                                id: true,
+                                name: true,
+                                price: true
+                            }
+                        }
+                    }
+                }
             },
             orderBy: {
                 createdAt: 'desc',
@@ -60,207 +74,312 @@ class OrderService {
     // =========================================================
     async getById(id) {
         const order = await prisma_1.prisma.order.findUnique({
-            where: {
-                id,
-            },
-            include: {
-                table: true,
-                staff: true,
+            where: { id },
+            select: {
+                id: true,
+                totalAmount: true,
+                status: true,
+                createdAt: true,
+                tableId: true,
+                staffId: true,
+                guestCount: true,
+                table: { select: { id: true, tableNumber: true, area: true } },
+                staff: { select: { id: true, fullName: true, username: true } },
                 orderItems: {
-                    include: {
-                        menuItem: true,
-                    },
-                },
+                    select: {
+                        id: true,
+                        quantity: true,
+                        price: true,
+                        subtotal: true,
+                        status: true,
+                        menuItem: {
+                            select: {
+                                id: true,
+                                name: true,
+                                price: true
+                            }
+                        }
+                    }
+                }
             },
         });
-        if (!order) {
+        if (!order)
             return null;
-        }
         return this.mapToEntity(order);
     }
     // =========================================================
-    // CREATE ORDER
+    // CREATE / ADD ITEMS TO ORDER
     // =========================================================
     async create(data) {
-        console.log('========== ORDER SERVICE ==========');
-        console.log('DATA:', JSON.stringify(data, null, 2));
-        // -----------------------------------------------------
-        // 1. KIỂM TRA USER
-        // -----------------------------------------------------
-        if (!data.userId) {
+        if (!data.userId)
             throw new Error('Không xác định được nhân viên đăng nhập');
+        let table = null;
+        const hasTableId = data.tableId && String(data.tableId).trim() !== '' && data.tableId !== 'undefined';
+        if (hasTableId) {
+            table = await prisma_1.prisma.restaurantTable.findUnique({
+                where: { id: String(data.tableId) },
+            });
+            if (!table)
+                throw new Error(`Không tìm thấy bàn với ID ${data.tableId}`);
         }
-        // -----------------------------------------------------
-        // 2. KIỂM TRA TABLE ID
-        // -----------------------------------------------------
-        if (!data.tableId) {
-            throw new Error('Thiếu tableId');
-        }
-        // -----------------------------------------------------
-        // 3. TÌM BÀN
-        // -----------------------------------------------------
-        const table = await prisma_1.prisma.restaurantTable.findUnique({
-            where: {
-                id: String(data.tableId),
-            },
-        });
-        if (!table) {
-            throw new Error(`Không tìm thấy bàn với ID ${data.tableId}`);
-        }
-        // -----------------------------------------------------
-        // 4. KIỂM TRA ITEMS
-        // -----------------------------------------------------
-        if (!Array.isArray(data.items) ||
-            data.items.length === 0) {
+        if (!Array.isArray(data.items) || data.items.length === 0) {
             throw new Error('Đơn hàng phải có ít nhất một món');
         }
-        // -----------------------------------------------------
-        // 5. XỬ LÝ ORDER ITEMS
-        // -----------------------------------------------------
-        let totalAmount = 0;
+        let additionalAmount = 0;
         const orderItemsData = [];
         for (let index = 0; index < data.items.length; index++) {
             const item = data.items[index];
-            // -----------------------------
-            // menuItemId
-            // -----------------------------
-            if (!item?.menuItemId) {
+            if (!item?.menuItemId)
                 throw new Error(`Món thứ ${index + 1} thiếu menuItemId`);
-            }
-            // -----------------------------
-            // quantity
-            // -----------------------------
             const quantity = Number(item.quantity);
-            if (!Number.isInteger(quantity) ||
-                quantity <= 0) {
-                throw new Error(`Số lượng món ${item.menuItemId} không hợp lệ`);
-            }
-            // -----------------------------
-            // TÌM MÓN
-            // -----------------------------
+            if (!Number.isInteger(quantity) || quantity <= 0)
+                throw new Error(`Số lượng món không hợp lệ`);
             const menuItem = await prisma_1.prisma.menuItem.findUnique({
-                where: {
-                    id: String(item.menuItemId),
-                },
+                where: { id: String(item.menuItemId) },
             });
-            if (!menuItem) {
+            if (!menuItem)
                 throw new Error(`Không tìm thấy món ăn với ID ${item.menuItemId}`);
-            }
-            // -----------------------------
-            // KIỂM TRA MÓN CÓ BÁN
-            // -----------------------------
-            if (!menuItem.isAvailable) {
+            if (!menuItem.isAvailable)
                 throw new Error(`Món ${menuItem.name} hiện đã hết`);
-            }
-            // -----------------------------
-            // TÍNH TIỀN
-            // -----------------------------
             const unitPrice = Number(menuItem.price);
             const subtotal = unitPrice * quantity;
-            totalAmount += subtotal;
-            // -----------------------------
-            // PUSH ORDER ITEM
-            // -----------------------------
+            additionalAmount += subtotal;
             orderItemsData.push({
                 menuItemId: String(item.menuItemId),
                 quantity,
                 price: unitPrice,
                 subtotal,
-                note: item.note ?? null,
             });
         }
-        // -----------------------------------------------------
-        // 6. DỮ LIỆU TẠO ORDER
-        // -----------------------------------------------------
-        const createData = {
-            tableId: String(data.tableId),
-            note: data.note || null,
-            totalAmount,
-            status: client_1.OrderStatus.PENDING,
-            staffId: String(data.userId),
-            orderItems: {
-                create: orderItemsData,
-            },
-        };
-        console.log('PRISMA CREATE DATA:', JSON.stringify(createData, null, 2));
-        // -----------------------------------------------------
-        // 7. TRANSACTION
-        // -----------------------------------------------------
-        const newOrder = await prisma_1.prisma.$transaction(async (tx) => {
-            // -------------------------
-            // CREATE ORDER
-            // -------------------------
-            const createdOrder = await tx.order.create({
-                data: createData,
-                include: {
-                    table: true,
-                    staff: true,
-                    orderItems: {
-                        include: {
-                            menuItem: true,
-                        },
+        const savedOrder = await prisma_1.prisma.$transaction(async (tx) => {
+            let existingOrder = null;
+            if (table) {
+                existingOrder = await tx.order.findFirst({
+                    where: {
+                        tableId: String(data.tableId),
+                        status: {
+                            // Tìm hóa đơn ở mọi trạng thái đang hoạt động
+                            in: [client_1.OrderStatus.PENDING, client_1.OrderStatus.PREPARING, client_1.OrderStatus.SERVED]
+                        }
                     },
-                },
-            });
-            // -------------------------
-            // UPDATE TABLE
-            // -------------------------
-            await tx.restaurantTable.update({
-                where: {
-                    id: String(data.tableId),
-                },
-                data: {
-                    status: client_1.TableStatus.OCCUPIED,
-                },
-            });
-            return createdOrder;
+                    include: { orderItems: true },
+                });
+            }
+            let targetOrder;
+            if (existingOrder) {
+                for (const newItem of orderItemsData) {
+                    // Kiểm tra xem món này đã có trong Bill và đang "Chờ bếp" (PENDING) chưa?
+                    const existingItem = await tx.orderItem.findFirst({
+                        where: {
+                            orderId: existingOrder.id,
+                            menuItemId: newItem.menuItemId,
+                            status: 'PENDING'
+                        }
+                    });
+                    if (existingItem) {
+                        // CỘNG DỒN số lượng và thành tiền
+                        await tx.orderItem.update({
+                            where: { id: existingItem.id },
+                            data: {
+                                quantity: existingItem.quantity + newItem.quantity,
+                                subtotal: Number(existingItem.subtotal) + newItem.subtotal
+                            }
+                        });
+                    }
+                    else {
+                        // TẠO DÒNG MỚI
+                        await tx.orderItem.create({
+                            data: {
+                                orderId: existingOrder.id,
+                                menuItemId: newItem.menuItemId,
+                                quantity: newItem.quantity,
+                                price: newItem.price,
+                                subtotal: newItem.subtotal,
+                            },
+                        });
+                    }
+                }
+                const newTotalAmount = Number(existingOrder.totalAmount) + additionalAmount;
+                const updatePayload = {
+                    totalAmount: newTotalAmount,
+                    status: client_1.OrderStatus.PENDING // Đánh thức hóa đơn để Bếp nhìn thấy
+                };
+                // Cập nhật số lượng khách nếu có truyền lên
+                if (data.guestCount) {
+                    updatePayload.guestCount = data.guestCount;
+                }
+                targetOrder = await tx.order.update({
+                    where: { id: existingOrder.id },
+                    data: updatePayload,
+                    select: {
+                        id: true,
+                        totalAmount: true,
+                        status: true,
+                        createdAt: true,
+                        tableId: true,
+                        staffId: true,
+                        guestCount: true,
+                        table: { select: { id: true, tableNumber: true, area: true } },
+                        staff: { select: { id: true, fullName: true, username: true } },
+                        orderItems: {
+                            select: {
+                                id: true,
+                                quantity: true,
+                                price: true,
+                                subtotal: true,
+                                status: true,
+                                menuItem: { select: { id: true, name: true, price: true } }
+                            }
+                        }
+                    },
+                });
+                // Kéo bàn về trạng thái có khách nếu đang ở trạng thái chờ tính tiền
+                if (table) {
+                    await tx.restaurantTable.update({
+                        where: { id: String(data.tableId) },
+                        data: { status: client_1.TableStatus.OCCUPIED },
+                    });
+                }
+            }
+            else {
+                // TẠO ĐƠN HÀNG MỚI HOÀN TOÀN
+                const createData = {
+                    tableId: table ? String(data.tableId) : null,
+                    totalAmount: additionalAmount,
+                    status: client_1.OrderStatus.PENDING,
+                    staffId: String(data.userId),
+                    guestCount: data.guestCount || 1,
+                    orderItems: { create: orderItemsData },
+                };
+                targetOrder = await tx.order.create({
+                    data: createData,
+                    select: {
+                        id: true,
+                        totalAmount: true,
+                        status: true,
+                        createdAt: true,
+                        tableId: true,
+                        staffId: true,
+                        guestCount: true,
+                        table: { select: { id: true, tableNumber: true, area: true } },
+                        staff: { select: { id: true, fullName: true, username: true } },
+                        orderItems: {
+                            select: {
+                                id: true,
+                                quantity: true,
+                                price: true,
+                                subtotal: true,
+                                status: true,
+                                menuItem: { select: { id: true, name: true, price: true } }
+                            }
+                        }
+                    },
+                });
+                if (table) {
+                    await tx.restaurantTable.update({
+                        where: { id: String(data.tableId) },
+                        data: { status: client_1.TableStatus.OCCUPIED },
+                    });
+                }
+            }
+            return targetOrder;
         });
-        console.log('ORDER CREATED:', newOrder.id);
-        return this.mapToEntity(newOrder);
+        return this.mapToEntity(savedOrder);
     }
     // =========================================================
     // UPDATE STATUS
     // =========================================================
     async updateStatus(id, data) {
-        const order = await prisma_1.prisma.order.findUnique({
-            where: {
-                id,
-            },
-        });
-        if (!order) {
+        const order = await prisma_1.prisma.order.findUnique({ where: { id } });
+        if (!order)
             throw new Error('Không tìm thấy đơn hàng');
-        }
         const updated = await prisma_1.prisma.order.update({
-            where: {
-                id,
-            },
-            data: {
-                status: data.status,
-            },
-            include: {
-                table: true,
-                staff: true,
+            where: { id },
+            data: { status: data.status },
+            select: {
+                id: true,
+                totalAmount: true,
+                status: true,
+                createdAt: true,
+                tableId: true,
+                staffId: true,
+                guestCount: true,
+                table: { select: { id: true, tableNumber: true, area: true } },
+                staff: { select: { id: true, fullName: true, username: true } },
                 orderItems: {
-                    include: {
-                        menuItem: true,
-                    },
-                },
+                    select: {
+                        id: true,
+                        quantity: true,
+                        price: true,
+                        subtotal: true,
+                        status: true,
+                        menuItem: { select: { id: true, name: true, price: true } }
+                    }
+                }
             },
         });
-        // -----------------------------------------------------
-        // CANCEL -> TABLE AVAILABLE
-        // -----------------------------------------------------
-        if (data.status ===
-            client_1.OrderStatus.CANCELLED) {
+        if (data.status === client_1.OrderStatus.CANCELLED && updated.tableId) {
             await prisma_1.prisma.restaurantTable.update({
-                where: {
-                    id: updated.tableId,
-                },
-                data: {
-                    status: client_1.TableStatus.AVAILABLE,
-                },
+                where: { id: updated.tableId },
+                data: { status: client_1.TableStatus.AVAILABLE },
             });
         }
+        if (data.status === 'SERVED') {
+            await prisma_1.prisma.orderItem.updateMany({
+                where: { orderId: id },
+                data: { status: 'SERVED' }
+            });
+            if (updated.tableId) {
+                await prisma_1.prisma.restaurantTable.update({
+                    where: { id: updated.tableId },
+                    data: { status: client_1.TableStatus.BILL_REQUESTED },
+                });
+            }
+        }
+        return this.mapToEntity(updated);
+    }
+    // =========================================================
+    // CẬP NHẬT TRẠNG THÁI CHO TỪNG MÓN CỦA BẾP
+    // =========================================================
+    async updateOrderItemStatus(itemId, status) {
+        const item = await prisma_1.prisma.orderItem.findUnique({ where: { id: itemId } });
+        if (!item) {
+            throw new Error('Không tìm thấy món ăn này trong đơn hàng');
+        }
+        const updatedItem = await prisma_1.prisma.orderItem.update({
+            where: { id: itemId },
+            data: { status: status.toUpperCase() }
+        });
+        return updatedItem;
+    }
+    // =========================================================
+    // CẬP NHẬT TRỰC TIẾP SỐ LƯỢNG KHÁCH (GUEST COUNT)
+    // =========================================================
+    async updateGuestCount(id, guestCount) {
+        const order = await prisma_1.prisma.order.findUnique({ where: { id } });
+        if (!order)
+            throw new Error('Không tìm thấy đơn hàng');
+        const updated = await prisma_1.prisma.order.update({
+            where: { id },
+            data: { guestCount: guestCount },
+            select: {
+                id: true,
+                totalAmount: true,
+                status: true,
+                createdAt: true,
+                tableId: true,
+                staffId: true,
+                guestCount: true,
+                table: { select: { id: true, tableNumber: true, area: true } },
+                staff: { select: { id: true, fullName: true, username: true } },
+                orderItems: {
+                    select: {
+                        id: true, quantity: true, price: true, subtotal: true, status: true,
+                        menuItem: { select: { id: true, name: true, price: true } }
+                    }
+                }
+            },
+        });
         return this.mapToEntity(updated);
     }
 }
