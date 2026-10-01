@@ -94,7 +94,7 @@ export class AuthService {
     // Xử lý đăng nhập ca bằng mã PIN
     async pinLogin(data: PinLoginDto): Promise<AuthResponseDto> {
         const user = await prisma.user.findUnique({
-            where: { id: data.username },
+            where: { id: data.userId },
         });
 
         if (!user) {

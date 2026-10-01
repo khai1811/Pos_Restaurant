@@ -30,6 +30,6 @@ export interface JwtPayload {
     role: UserRole;
 }
 export interface PinLoginDto {
-    username: string;
+    userId: string;
     pin: string;
 }
