@@ -58,10 +58,13 @@ try {
 // ---------------------------------------------------------
 app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
     // Sử dụng originalUrl để bắt chính xác các route công khai không cần token
-    if (req.originalUrl.includes('/auth/login') || req.originalUrl.includes('/auth/register')) {
+    if (
+        req.originalUrl.includes('/auth/login') ||
+        req.originalUrl.includes('/auth/register') ||
+        (req.method === 'GET' && req.originalUrl === '/api/users')
+    ) {
         return next();
     }
-
     try {
         // Gọi xác thực với securityName là 'bearerAuth' để khớp hoàn toàn với middleware
         const user = await expressAuthentication(req, 'bearerAuth');
