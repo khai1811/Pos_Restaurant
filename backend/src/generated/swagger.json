@@ -813,7 +813,7 @@
 			},
 			"PinLoginDto": {
 				"properties": {
-					"userId": {
+					"username": {
 						"type": "string"
 					},
 					"pin": {
@@ -821,7 +821,7 @@
 					}
 				},
 				"required": [
-					"userId",
+					"username",
 					"pin"
 				],
 				"type": "object",

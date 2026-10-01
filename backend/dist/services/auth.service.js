@@ -115,7 +115,7 @@ class AuthService {
     // Xử lý đăng nhập ca bằng mã PIN
     async pinLogin(data) {
         const user = await prisma_1.prisma.user.findUnique({
-            where: { id: data.userId },
+            where: { id: data.username },
         });
         if (!user) {
             throw new Error('Không tìm thấy nhân viên');

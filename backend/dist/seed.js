@@ -12,14 +12,14 @@ async function main() {
     const passwordHash = await bcrypt_1.default.hash("123456", 10);
     // 1. TẠO USERS
     const users = [
-        { username: "admin", fullName: "Quản trị viên", role: "ADMIN", email: "admin@pos.local", phone: "0900000001" },
-        { username: "cashier", fullName: "Nhân viên thu ngân", role: "CASHIER", email: "cashier@pos.local", phone: "0900000002" },
-        { username: "staff", fullName: "Nhân viên phục vụ", role: "STAFF", email: "staff@pos.local", phone: "0900000003" }
+        { username: "admin", fullName: "Quản trị viên", role: "ADMIN", email: "admin@pos.local", phone: "0900000001", pin: "1111" },
+        { username: "cashier", fullName: "Nhân viên thu ngân", role: "CASHIER", email: "cashier@pos.local", phone: "0900000002", pin: "2222" },
+        { username: "staff", fullName: "Nhân viên phục vụ", role: "STAFF", email: "staff@pos.local", phone: "0900000003", pin: "3333" },
     ];
     for (const u of users) {
         await prisma.user.upsert({
             where: { username: u.username },
-            update: { fullName: u.fullName, role: u.role },
+            update: { fullName: u.fullName, role: u.role, pin: u.pin },
             create: { ...u, password: passwordHash, isActive: true },
         });
     }

@@ -364,7 +364,7 @@ const models = {
     "PinLoginDto": {
         "dataType": "refObject",
         "properties": {
-            "userId": { "dataType": "string", "required": true },
+            "username": { "dataType": "string", "required": true },
             "pin": { "dataType": "string", "required": true },
         },
         "additionalProperties": false,
