@@ -397,6 +397,7 @@ export function RegisterRoutes(app: Router) {
         const argsUserController_getUsers: Record<string, TsoaRoute.ParameterSchema> = {
         };
         app.get('/api/users',
+            authenticateMiddleware([{"":[]}]),
             ...(fetchMiddlewares<RequestHandler>(UserController)),
             ...(fetchMiddlewares<RequestHandler>(UserController.prototype.getUsers)),
 
