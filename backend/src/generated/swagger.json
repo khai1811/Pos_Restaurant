@@ -871,11 +871,7 @@
 				"tags": [
 					"User"
 				],
-				"security": [
-					{
-						"": []
-					}
-				],
+				"security": [],
 				"parameters": []
 			},
 			"post": {

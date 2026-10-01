@@ -21,7 +21,7 @@ import { UserService } from '../services/user.service';
 // @Security('bearerAuth')
 export class UserController extends Controller {
     private userService = new UserService();
-    @Security('')
+
     @Get('/')
     public async getUsers(): Promise<UserResponseDto[]> {
         return this.userService.getAll();

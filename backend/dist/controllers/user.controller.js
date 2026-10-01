@@ -73,7 +73,6 @@ let UserController = class UserController extends tsoa_1.Controller {
 };
 exports.UserController = UserController;
 __decorate([
-    (0, tsoa_1.Security)(''),
     (0, tsoa_1.Get)('/'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
