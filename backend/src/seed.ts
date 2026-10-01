@@ -11,7 +11,7 @@ async function main() {
 
     // 1. TẠO USERS
     const users = [
-        { username: "admin", fullName: "Quản trị viên", role: "ADMIN" as const, email: "admin@pos.local", phone: "0900000001" },
+        { username: "admin", fullName: "Quản trị viên", role: "ADMIN" as const, email: "admin@pos.local", phone: "0900000001", pin: "1111" },
         { username: "cashier", fullName: "Nhân viên thu ngân", role: "CASHIER" as const, email: "cashier@pos.local", phone: "0900000002" },
         { username: "staff", fullName: "Nhân viên phục vụ", role: "STAFF" as const, email: "staff@pos.local", phone: "0900000003" }
     ];
