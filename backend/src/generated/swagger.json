@@ -463,7 +463,6 @@
 					}
 				},
 				"required": [
-					"tableId",
 					"userId",
 					"items"
 				],
@@ -813,7 +812,7 @@
 			},
 			"PinLoginDto": {
 				"properties": {
-					"username": {
+					"userId": {
 						"type": "string"
 					},
 					"pin": {
@@ -821,7 +820,7 @@
 					}
 				},
 				"required": [
-					"username",
+					"userId",
 					"pin"
 				],
 				"type": "object",

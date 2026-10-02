@@ -63,59 +63,196 @@ export default function OrderPage() {
         } catch (error) { console.error('Lỗi tải thực đơn:', error); }
     };
 
+    // const fetchOrderInfo = useCallback(async (isBackground = false) => {
+    //     try {
+    //         if (!isBackground) setLoading(true);
+    //         const isTakeaway = tableId === 'new-takeaway' || tableId === 'takeaway';
+
+    //         if (!isTakeaway && tableId) {
+    //             try {
+    //                 const tableData = (await axiosClient.get(`/tables/${tableId}`)).data;
+    //                 setTableName(tableData.tableNumber ? `Bàn ${tableData.tableNumber}` : (tableData.name || 'Bàn'));
+
+    //                 let orderData: any = await orderApi.getByTable(tableId);
+    //                 if (Array.isArray(orderData)) orderData = orderData.length > 0 ? orderData[0] : null;
+
+    //                 if (orderData && (orderData.id || orderData._id)) {
+    //                     const oid = String(orderData.id || orderData._id || '');
+    //                     if (oid) { setCreatedOrderId(oid); setOrderCode(`#${oid.slice(-6).toUpperCase()}`); }
+
+    //                     // Lấy số khách từ database nếu có, mặc định là 1
+    //                     setGuestCount(orderData.guestCount || 1);
+
+    //                     const currentItems = orderData.items || orderData.orderItems || [];
+    //                     if (currentItems.length > 0) {
+    //                         const rawCart = currentItems.filter((it: any) => it != null).map((it: any) => ({
+    //                             itemId: it?.id, id: it?.menuItemId || it?.menuItem?.id || Math.random().toString(),
+    //                             name: it?.menuItem?.name || it?.name || 'Món ăn', price: Number(it?.price || it?.menuItem?.price || 0),
+    //                             quantity: Number(it?.quantity || 1), note: it?.note || '', isSent: true,
+    //                             status: (it?.status || it?.itemStatus || 'PENDING').toUpperCase()
+    //                         }));
+
+    //                         // 🔥 THUẬT TOÁN GỘP HIỂN THỊ: Gộp các món CÙNG MÃ, CÙNG TRẠNG THÁI và CÙNG GHI CHÚ
+    //                         const aggregatedCart: CartItem[] = [];
+    //                         rawCart.forEach((item: any) => {
+    //                             const existing = aggregatedCart.find(a => a.id === item.id && a.status === item.status && a.note === item.note);
+    //                             if (existing) {
+    //                                 existing.quantity += item.quantity;
+    //                             } else {
+    //                                 aggregatedCart.push(item);
+    //                             }
+    //                         });
+
+    //                         setCart(prev => {
+    //                             const localUnsent = prev.filter(item => !item.isSent);
+    //                             return [...aggregatedCart, ...localUnsent];
+    //                         });
+    //                     }
+    //                 }
+    //             } catch { setTableName(`Bàn ${tableId}`); }
+    //         } else {
+    //             setTableName('Mang về');
+    //         }
+    //     } catch (error) { console.error('Lỗi tải dữ liệu bàn:', error); }
+    //     finally { if (!isBackground) setLoading(false); }
+    // }, [tableId]);
+
+    // const fetchOrderInfo = useCallback(async (isBackground = false) => {
+    //     try {
+    //         if (!isBackground) setLoading(true);
+    //         const isTakeaway = tableId === 'new-takeaway' || tableId === 'takeaway';
+    //         const targetOrderId = location.state?.orderId; // Nhận orderId từ TablesPage truyền sang
+
+    //         let orderData: any = null;
+
+    //         if (targetOrderId) {
+    //             // 1. NẾU LÀ ĐƠN MANG VỀ ĐÃ CÓ SẴN
+    //             setTableName('Mang về');
+    //             orderData = (await axiosClient.get(`/orders/${targetOrderId}`)).data;
+    //         } else if (!isTakeaway && tableId) {
+    //             // 2. NẾU LÀ ĐƠN TẠI BÀN
+    //             try {
+    //                 const tableData = (await axiosClient.get(`/tables/${tableId}`)).data;
+    //                 setTableName(tableData.tableNumber ? `Bàn ${tableData.tableNumber}` : (tableData.name || 'Bàn'));
+    //                 const ordersRes: any = await orderApi.getByTable(tableId);
+    //                 orderData = Array.isArray(ordersRes) && ordersRes.length > 0 ? ordersRes[0] : null;
+    //             } catch {
+    //                 setTableName(`Bàn ${tableId}`);
+    //             }
+    //         } else {
+    //             // 3. TẠO ĐƠN MANG VỀ MỚI
+    //             setTableName('Mang về');
+    //         }
+
+    //         // GỘP CHUNG LOGIC HIỂN THỊ MÓN RA GIỎ HÀNG
+    //         if (orderData && (orderData.id || orderData._id)) {
+    //             const oid = String(orderData.id || orderData._id || '');
+    //             setCreatedOrderId(oid);
+    //             setOrderCode(`#${oid.slice(-6).toUpperCase()}`);
+    //             setGuestCount(orderData.guestCount || 1);
+
+    //             const currentItems = orderData.items || orderData.orderItems || [];
+    //             if (currentItems.length > 0) {
+    //                 const rawCart = currentItems.filter((it: any) => it != null).map((it: any) => ({
+    //                     itemId: it?.id, id: it?.menuItemId || it?.menuItem?.id || Math.random().toString(),
+    //                     name: it?.menuItem?.name || it?.name || 'Món ăn', price: Number(it?.price || it?.menuItem?.price || 0),
+    //                     quantity: Number(it?.quantity || 1), note: it?.note || '', isSent: true,
+    //                     status: (it?.status || it?.itemStatus || 'PENDING').toUpperCase()
+    //                 }));
+
+    //                 const aggregatedCart: CartItem[] = [];
+    //                 rawCart.forEach((item: any) => {
+    //                     const existing = aggregatedCart.find(a => a.id === item.id && a.status === item.status && a.note === item.note);
+    //                     if (existing) {
+    //                         existing.quantity += item.quantity;
+    //                     } else {
+    //                         aggregatedCart.push(item);
+    //                     }
+    //                 });
+
+    //                 setCart(prev => {
+    //                     const localUnsent = prev.filter(item => !item.isSent);
+    //                     return [...aggregatedCart, ...localUnsent];
+    //                 });
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error('Lỗi tải dữ liệu bàn/đơn:', error);
+    //     } finally {
+    //         if (!isBackground) setLoading(false);
+    //     }
+    // }, [tableId, location.state]);
     const fetchOrderInfo = useCallback(async (isBackground = false) => {
         try {
             if (!isBackground) setLoading(true);
-            const isTakeaway = tableId === 'new-takeaway';
+            const isTakeaway = tableId === 'new-takeaway' || tableId === 'takeaway';
+            const targetOrderId = location.state?.orderId;
 
-            if (!isTakeaway && tableId) {
+            let orderData: any = null;
+
+            // 1. SET TÊN BÀN
+            if (isTakeaway) {
+                setTableName('Mang về');
+            } else if (tableId) {
                 try {
                     const tableData = (await axiosClient.get(`/tables/${tableId}`)).data;
                     setTableName(tableData.tableNumber ? `Bàn ${tableData.tableNumber}` : (tableData.name || 'Bàn'));
-
-                    let orderData: any = await orderApi.getByTable(tableId);
-                    if (Array.isArray(orderData)) orderData = orderData.length > 0 ? orderData[0] : null;
-
-                    if (orderData && (orderData.id || orderData._id)) {
-                        const oid = String(orderData.id || orderData._id || '');
-                        if (oid) { setCreatedOrderId(oid); setOrderCode(`#${oid.slice(-6).toUpperCase()}`); }
-
-                        // Lấy số khách từ database nếu có, mặc định là 1
-                        setGuestCount(orderData.guestCount || 1);
-
-                        const currentItems = orderData.items || orderData.orderItems || [];
-                        if (currentItems.length > 0) {
-                            const rawCart = currentItems.filter((it: any) => it != null).map((it: any) => ({
-                                itemId: it?.id, id: it?.menuItemId || it?.menuItem?.id || Math.random().toString(),
-                                name: it?.menuItem?.name || it?.name || 'Món ăn', price: Number(it?.price || it?.menuItem?.price || 0),
-                                quantity: Number(it?.quantity || 1), note: it?.note || '', isSent: true,
-                                status: (it?.status || it?.itemStatus || 'PENDING').toUpperCase()
-                            }));
-
-                            // 🔥 THUẬT TOÁN GỘP HIỂN THỊ: Gộp các món CÙNG MÃ, CÙNG TRẠNG THÁI và CÙNG GHI CHÚ
-                            const aggregatedCart: CartItem[] = [];
-                            rawCart.forEach((item: any) => {
-                                const existing = aggregatedCart.find(a => a.id === item.id && a.status === item.status && a.note === item.note);
-                                if (existing) {
-                                    existing.quantity += item.quantity;
-                                } else {
-                                    aggregatedCart.push(item);
-                                }
-                            });
-
-                            setCart(prev => {
-                                const localUnsent = prev.filter(item => !item.isSent);
-                                return [...aggregatedCart, ...localUnsent];
-                            });
-                        }
-                    }
-                } catch { setTableName(`Bàn ${tableId}`); }
-            } else {
-                setTableName('Mang về');
+                } catch {
+                    setTableName(`Bàn ${tableId}`);
+                }
             }
-        } catch (error) { console.error('Lỗi tải dữ liệu bàn:', error); }
-        finally { if (!isBackground) setLoading(false); }
-    }, [tableId]);
+
+            // 2. FETCH DATA ĐƠN HÀNG (Ưu tiên ID chính xác được truyền sang)
+            if (targetOrderId) {
+                orderData = (await axiosClient.get(`/orders/${targetOrderId}`)).data;
+            } else if (!isTakeaway && tableId) {
+                // Đề phòng user F5 trang bị mất state, tự lọc danh sách tìm đơn chưa thanh toán của bàn này
+                const allOrdersRes = (await axiosClient.get(`/orders`)).data;
+                const allOrders = Array.isArray(allOrdersRes) ? allOrdersRes : (allOrdersRes.data || []);
+                orderData = allOrders.find((o: any) =>
+                    String(o.tableId) === String(tableId) &&
+                    !['COMPLETED', 'PAID', 'CANCELLED'].includes(String(o.status || '').toUpperCase())
+                );
+            }
+
+            // 3. ĐỔ DỮ LIỆU RA GIỎ HÀNG
+            if (orderData && (orderData.id || orderData._id)) {
+                const oid = String(orderData.id || orderData._id || '');
+                setCreatedOrderId(oid);
+                setOrderCode(`#${oid.slice(-6).toUpperCase()}`);
+                setGuestCount(orderData.guestCount || 1);
+
+                const currentItems = orderData.items || orderData.orderItems || [];
+                if (currentItems.length > 0) {
+                    const rawCart = currentItems.filter((it: any) => it != null).map((it: any) => ({
+                        itemId: it?.id, id: it?.menuItemId || it?.menuItem?.id || Math.random().toString(),
+                        name: it?.menuItem?.name || it?.name || 'Món ăn', price: Number(it?.price || it?.menuItem?.price || 0),
+                        quantity: Number(it?.quantity || 1), note: it?.note || '', isSent: true,
+                        status: (it?.status || it?.itemStatus || 'PENDING').toUpperCase()
+                    }));
+
+                    const aggregatedCart: CartItem[] = [];
+                    rawCart.forEach((item: any) => {
+                        const existing = aggregatedCart.find(a => a.id === item.id && a.status === item.status && a.note === item.note);
+                        if (existing) {
+                            existing.quantity += item.quantity;
+                        } else {
+                            aggregatedCart.push(item);
+                        }
+                    });
+
+                    setCart(prev => {
+                        const localUnsent = prev.filter(item => !item.isSent);
+                        return [...aggregatedCart, ...localUnsent];
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Lỗi tải dữ liệu bàn/đơn:', error);
+        } finally {
+            if (!isBackground) setLoading(false);
+        }
+    }, [tableId, location.state]);
 
     useEffect(() => {
         fetchMenu();

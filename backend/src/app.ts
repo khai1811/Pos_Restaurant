@@ -57,17 +57,13 @@ try {
 // 👉 MIDDLEWARE BẢO MẬT TOÀN CỤC CHO MỌI API /api/*
 // ---------------------------------------------------------
 app.use('/api', async (req: Request, res: Response, next: NextFunction) => {
-    // Cho phép đi qua tự do nếu là login, register hoặc lấy danh sách user
-    if (
-        req.originalUrl.includes('/auth/login') ||
-        req.originalUrl.includes('/auth/register') ||
-        req.originalUrl.startsWith('/api/users') ||
-        req.url.startsWith('/users')
-    ) {
+    // Sử dụng originalUrl để bắt chính xác các route công khai không cần token
+    if (req.originalUrl.includes('/auth/login') || req.originalUrl.includes('/auth/register')) {
         return next();
     }
 
     try {
+        // Gọi xác thực với securityName là 'bearerAuth' để khớp hoàn toàn với middleware
         const user = await expressAuthentication(req, 'bearerAuth');
         (req as any).user = user;
         next();

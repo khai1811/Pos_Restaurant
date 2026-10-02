@@ -218,7 +218,7 @@ const models: TsoaRoute.Models = {
     "CreateOrderDto": {
         "dataType": "refObject",
         "properties": {
-            "tableId": {"dataType":"string","required":true},
+            "tableId": {"dataType":"string"},
             "userId": {"dataType":"string","required":true},
             "note": {"dataType":"string"},
             "guestCount": {"dataType":"double"},
@@ -371,7 +371,7 @@ const models: TsoaRoute.Models = {
     "PinLoginDto": {
         "dataType": "refObject",
         "properties": {
-            "username": {"dataType":"string","required":true},
+            "userId": {"dataType":"string","required":true},
             "pin": {"dataType":"string","required":true},
         },
         "additionalProperties": false,

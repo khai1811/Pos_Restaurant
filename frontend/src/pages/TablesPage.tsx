@@ -550,10 +550,34 @@ export default function TablesPage() {
                         </div>
 
                         <div className="space-y-3 pt-2">
-                            {/* Nút Gọi món (Hiển thị cho bàn Trống, Bàn đang có khách, Bàn Đã đặt) */}
+                            {/* Nút Gọi món (Hiển thị cho bàn Trống, Bàn đang có khách, Bàn Đã đặt)
                             <button onClick={() => { setShowActionModal(false); navigate(`/order/${encodeURIComponent(selectedTable.id)}`); }} className="w-full py-3.5 bg-blue-50 dark:bg-slate-800 hover:bg-[#1890ff] dark:hover:bg-[#1890ff] text-[#1890ff] dark:text-[#3ba0ff] hover:text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-blue-200 dark:border-slate-700">
                                 <Utensils size={18} /> {selectedTable.status === 'AVAILABLE' || selectedTable.status === 'RESERVED' ? 'Mở Bàn & Gọi Món' : 'Xem / Gọi Thêm Món'}
+                            </button> */}
+
+                            {/* // ✅ Code Mới (Bổ sung truyền state chứa orderId): */}
+                            {/* <button onClick={() => {
+                                setShowActionModal(false);
+                                if (selectedTable.id === 'takeaway' && activeOrder) {
+                                    navigate(`/order/takeaway`, { state: { orderId: activeOrder.id || (activeOrder as any)._id } });
+                                } else {
+                                    navigate(`/order/${encodeURIComponent(selectedTable.id)}`);
+                                }
+                            }} className="w-full py-3.5 bg-blue-50 dark:bg-slate-800 hover:bg-[#1890ff] dark:hover:bg-[#1890ff] text-[#1890ff] dark:text-[#3ba0ff] hover:text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-blue-200 dark:border-slate-700">
+                                <Utensils size={18} /> {selectedTable.status === 'AVAILABLE' || selectedTable.status === 'RESERVED' ? 'Mở Bàn & Gọi Món' : 'Xem / Gọi Thêm Món'}
+                            </button> */}
+
+                            <button onClick={() => {
+                                setShowActionModal(false);
+                                const targetOrderId = activeOrder?.id || (activeOrder as any)?._id;
+                                const targetPath = selectedTable.id === 'takeaway' ? '/order/takeaway' : `/order/${encodeURIComponent(selectedTable.id)}`;
+
+                                // Gửi kèm ID đơn hàng sang trang OrderPage
+                                navigate(targetPath, { state: { orderId: targetOrderId } });
+                            }} className="w-full py-3.5 bg-blue-50 dark:bg-slate-800 hover:bg-[#1890ff] dark:hover:bg-[#1890ff] text-[#1890ff] dark:text-[#3ba0ff] hover:text-white font-bold rounded-xl text-[13px] flex items-center justify-center gap-2 shadow-sm transition-colors cursor-pointer border border-blue-200 dark:border-slate-700">
+                                <Utensils size={18} /> {selectedTable.status === 'AVAILABLE' || selectedTable.status === 'RESERVED' ? 'Mở Bàn & Gọi Món' : 'Xem / Gọi Thêm Món'}
                             </button>
+
 
                             {/* Nút Đặt bàn (Chỉ hiện khi bàn Trống) */}
                             {selectedTable.status === 'AVAILABLE' && (

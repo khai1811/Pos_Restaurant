@@ -39,7 +39,7 @@ export class OrderService {
             totalAmount: Number(order?.totalAmount || 0),
             tableNumber: order?.table?.tableNumber,
             userName: staff?.fullName || staff?.username || '',
-            guestCount: order?.guestCount || 1, // Lấy số lượng khách
+            guestCount: order?.guestCount || 1,
             items: items.map(
                 (item: any) =>
                     new OrderItemEntity({
@@ -141,7 +141,12 @@ export class OrderService {
         if (!data.userId) throw new Error('Không xác định được nhân viên đăng nhập');
 
         let table = null;
-        const hasTableId = data.tableId && String(data.tableId).trim() !== '' && data.tableId !== 'undefined';
+
+        // KIỂM TRA ĐƠN MANG VỀ
+        const isTakeaway = data.tableId === 'takeaway' || data.tableId === 'new-takeaway';
+
+        // BỎ QUA TÌM BÀN NẾU LÀ ĐƠN MANG VỀ
+        const hasTableId = data.tableId && String(data.tableId).trim() !== '' && data.tableId !== 'undefined' && !isTakeaway;
 
         if (hasTableId) {
             table = await prisma.restaurantTable.findUnique({
@@ -192,7 +197,6 @@ export class OrderService {
                     where: {
                         tableId: String(data.tableId),
                         status: {
-                            // Tìm hóa đơn ở mọi trạng thái đang hoạt động
                             in: [OrderStatus.PENDING, OrderStatus.PREPARING, OrderStatus.SERVED]
                         }
                     },
@@ -204,7 +208,6 @@ export class OrderService {
 
             if (existingOrder) {
                 for (const newItem of orderItemsData) {
-                    // Kiểm tra xem món này đã có trong Bill và đang "Chờ bếp" (PENDING) chưa?
                     const existingItem = await tx.orderItem.findFirst({
                         where: {
                             orderId: existingOrder.id,
@@ -214,7 +217,6 @@ export class OrderService {
                     });
 
                     if (existingItem) {
-                        // CỘNG DỒN số lượng và thành tiền
                         await tx.orderItem.update({
                             where: { id: existingItem.id },
                             data: {
@@ -223,7 +225,6 @@ export class OrderService {
                             }
                         });
                     } else {
-                        // TẠO DÒNG MỚI
                         await tx.orderItem.create({
                             data: {
                                 orderId: existingOrder.id,
@@ -239,10 +240,9 @@ export class OrderService {
                 const newTotalAmount = Number(existingOrder.totalAmount) + additionalAmount;
                 const updatePayload: any = {
                     totalAmount: newTotalAmount,
-                    status: OrderStatus.PENDING // Đánh thức hóa đơn để Bếp nhìn thấy
+                    status: OrderStatus.PENDING
                 };
 
-                // Cập nhật số lượng khách nếu có truyền lên
                 if (data.guestCount) {
                     updatePayload.guestCount = data.guestCount;
                 }
@@ -273,7 +273,6 @@ export class OrderService {
                     },
                 });
 
-                // Kéo bàn về trạng thái có khách nếu đang ở trạng thái chờ tính tiền
                 if (table) {
                     await tx.restaurantTable.update({
                         where: { id: String(data.tableId) },
@@ -282,7 +281,6 @@ export class OrderService {
                 }
 
             } else {
-                // TẠO ĐƠN HÀNG MỚI HOÀN TOÀN
                 const createData: any = {
                     tableId: table ? String(data.tableId) : null,
                     totalAmount: additionalAmount,
